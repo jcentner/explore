@@ -1,0 +1,17 @@
+{
+    "name": "Game.Gates",
+    "rootNamespace": "Explorer.Gates",
+    "references": [
+        "Game.Core",
+        "Game.Gravity"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
