@@ -1,5 +1,24 @@
 # Player System Specification
 
+**Status: 🟡 PARTIALLY IMPLEMENTED (Milestone 1)**
+
+## Implementation Notes
+
+| Component | File | Status |
+|-----------|------|--------|
+| `CharacterMotorSpherical` | `Scripts/Player/CharacterMotorSpherical.cs` | ✅ Complete |
+| `PlayerCamera` | `Scripts/Player/PlayerCamera.cs` | ✅ Complete |
+| `InputReader` | `Scripts/Player/InputReader.cs` | ✅ Complete |
+| `PlayerInitializer` | `Scripts/Player/PlayerInitializer.cs` | ✅ Complete |
+| `PlayerStateController` | - | ❌ Deferred (Milestone 2+) |
+
+### Known Limitations
+- No state machine yet (OnFoot/InShip/etc.) - deferred until ship system
+- Camera collision avoidance fields exist but not fully utilized
+- No slope sliding logic
+
+---
+
 ## Purpose
 
 Handle on-foot player movement, camera control, and state management on spherical surfaces with dynamic gravity.
@@ -187,12 +206,12 @@ Transitioning ─(arrive)───────▶ OnFoot
 
 ## Testing Checklist
 
-- [ ] Walk in all directions relative to camera
-- [ ] Jump and land smoothly
-- [ ] Walk over planet curvature without popping
-- [ ] Camera follows without nausea-inducing rotation
-- [ ] State machine transitions work correctly
-- [ ] Input is ignored during Transitioning state
+- [x] Walk in all directions relative to camera
+- [x] Jump and land smoothly
+- [x] Walk over planet curvature without popping
+- [x] Camera follows without nausea-inducing rotation
+- [ ] State machine transitions work correctly (not yet implemented)
+- [ ] Input is ignored during Transitioning state (not yet implemented)
 
 ## Performance Notes
 

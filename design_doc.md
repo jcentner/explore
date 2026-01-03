@@ -429,10 +429,12 @@ Manage gravitational attraction toward celestial bodies.
 
 ---
 
-### Milestone 1: Core Gravity + On-foot Prototype
+### Milestone 1: Core Gravity + On-foot Prototype ✅ COMPLETE
 
-* Walkable planet sphere with local gravity
-* Camera stability and “up” alignment
+* ✅ Walkable planet sphere with local gravity
+* ✅ Camera stability and "up" alignment
+* ✅ Gravity switching between bodies (distance-based)
+* ✅ Test asteroid for multi-body gravity testing
 
 ---
 
@@ -475,17 +477,24 @@ Manage gravitational attraction toward celestial bodies.
 
 ## 18) Next Actions
 
+**Milestone 0: Tooling + URP Baseline** ✅
 * [x] Create folder structure in Unity project
 * [x] Set up Assembly Definitions
 * [x] Create initial spec files for Gravity, Player, Ship systems
 * [x] Set Asset Serialization to Force Text
 * [x] Create test scene with planet sphere + directional light
 * [x] Set up Global Post Volume with stylized grade
-* [ ] Configure Input Actions asset with action maps
-* [ ] Implement GravityBody + GravitySolver (Milestone 1 start)
-* [ ] Implement CharacterMotorSpherical
-* [ ] Implement PlayerCamera with spherical gravity support
-* [ ] Create initial spec files for Gravity, Player, Ship systems
-* [ ] Set Asset Serialization to Force Text
-* [ ] Create test scene with planet sphere + directional light
-* [ ] Implement GravityBody + GravitySolver (Milestone 1 start)
+
+**Milestone 1: Core Gravity + On-foot Prototype** ✅
+* [x] Implement GravityBody + GravitySolver
+* [x] Implement GravityManager singleton
+* [x] Implement CharacterMotorSpherical
+* [x] Implement PlayerCamera with spherical gravity support
+* [x] Implement InputReader (ScriptableObject)
+* [x] Configure TestGravity scene with Player, Planet, Asteroid
+
+**Milestone 2: Ship Prototype** (Next)
+* [ ] Implement ShipController for 6DOF flight
+* [ ] Implement PlayerStateController state machine
+* [ ] Implement boarding/disembarking system
+* [ ] Create test ship prefab

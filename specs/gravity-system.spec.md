@@ -1,5 +1,24 @@
 # Gravity System Specification
 
+**Status: ✅ IMPLEMENTED (Milestone 1)**
+
+## Implementation Notes
+
+| Component | File | Status |
+|-----------|------|--------|
+| `IGravitySource` | `Scripts/Core/IGravitySource.cs` | ✅ Complete |
+| `IGravityAffected` | `Scripts/Core/IGravityAffected.cs` | ✅ Complete |
+| `GravityManager` | `Scripts/Gravity/GravityManager.cs` | ✅ Complete |
+| `GravityBody` | `Scripts/Gravity/GravityBody.cs` | ✅ Complete |
+| `GravitySolver` | `Scripts/Gravity/GravitySolver.cs` | ✅ Complete |
+
+### Known Limitations
+- Sphere of influence uses simple distance-based selection (priority, then closest)
+- No spatial partitioning yet (fine for < 10 sources)
+- No blending between gravity sources (hard switch)
+
+---
+
 ## Purpose
 
 Manage gravitational attraction toward celestial bodies. Entities affected by gravity experience a force pulling them toward the nearest/dominant gravity source.
@@ -136,11 +155,11 @@ gravity = direction * strength
 
 ## Testing Checklist
 
-- [ ] Entity on planet surface experiences correct down direction
-- [ ] Entity between two planets goes to higher-priority one
-- [ ] Entity outside all fields experiences zero gravity
+- [x] Entity on planet surface experiences correct down direction
+- [x] Entity between two planets goes to higher-priority one (or closer if same priority)
+- [x] Entity outside all fields experiences zero gravity
 - [ ] Disabling gravity on entity makes it float
-- [ ] Adding/removing GravityBody at runtime works correctly
+- [x] Adding/removing GravityBody at runtime works correctly
 
 ## Dependencies
 

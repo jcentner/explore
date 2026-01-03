@@ -118,16 +118,38 @@ public class Example : MonoBehaviour
 ## Current State
 
 **Milestone 0: COMPLETE** ✅
-- Folder structure created
-- Assembly definitions configured
-- Test scene with planet sphere
-- Post-processing volume configured
-- Specs written for Gravity, Player, Ship systems
+- Folder structure, assembly definitions, specs
 
-**Next: Milestone 1 - Core Gravity + On-foot Prototype**
-- Implement GravityBody, GravitySolver
-- CharacterMotorSpherical for spherical gravity walking
-- Camera stability on curved surfaces
+**Milestone 1: COMPLETE** ✅
+- Gravity system: `GravityManager`, `GravityBody`, `GravitySolver`
+- Player system: `CharacterMotorSpherical`, `PlayerCamera`, `InputReader`
+- TestGravity scene with Planet_Test, Player, Asteroid_Test
+- Spherical gravity walking and jumping works
+- Camera aligns to gravity "up" direction
+
+**Next: Milestone 2 - Ship Flight**
+- `ShipController` for 6DOF flight
+- Boarding/disembarking system
+- `PlayerStateController` state machine
+
+## Implemented Scripts
+
+```
+Scripts/Core/
+├── IGravitySource.cs      ✅
+└── IGravityAffected.cs    ✅
+
+Scripts/Gravity/
+├── GravityManager.cs      ✅ (singleton, priority-based selection)
+├── GravityBody.cs         ✅ (linear falloff, editor gizmos)
+└── GravitySolver.cs       ✅ (queries manager, applies to Rigidbody)
+
+Scripts/Player/
+├── InputReader.cs         ✅ (ScriptableObject, loads from Resources)
+├── CharacterMotorSpherical.cs ✅ (movement, jumping, ground check)
+├── PlayerCamera.cs        ✅ (third-person, gravity-aligned)
+└── PlayerInitializer.cs   ✅ (runtime dependency wiring)
+```
 
 ## Workflow
 
