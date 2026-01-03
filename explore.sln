@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "explorer-game", "explorer-game", "{6BCDE57B-20DB-825D-3864-CA66386452E6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-Editor", "explorer-game\Assembly-CSharp-Editor.csproj", "{666B6548-792E-ECEB-60C2-90895B6C08A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp", "explorer-game\Assembly-CSharp.csproj", "{8676564A-B69D-0FE0-0965-B94CA1C3C72A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{666B6548-792E-ECEB-60C2-90895B6C08A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{666B6548-792E-ECEB-60C2-90895B6C08A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{666B6548-792E-ECEB-60C2-90895B6C08A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{666B6548-792E-ECEB-60C2-90895B6C08A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8676564A-B69D-0FE0-0965-B94CA1C3C72A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8676564A-B69D-0FE0-0965-B94CA1C3C72A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8676564A-B69D-0FE0-0965-B94CA1C3C72A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8676564A-B69D-0FE0-0965-B94CA1C3C72A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{666B6548-792E-ECEB-60C2-90895B6C08A3} = {6BCDE57B-20DB-825D-3864-CA66386452E6}
+		{8676564A-B69D-0FE0-0965-B94CA1C3C72A} = {6BCDE57B-20DB-825D-3864-CA66386452E6}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {891C35E6-9116-428B-AD3B-D7CBA8687261}
+	EndGlobalSection
+EndGlobal
