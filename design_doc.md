@@ -1,10 +1,10 @@
-# Project Plan: Scaled Solar-System Exploration Game (Unity3D)
+# Project Plan: Scaled Solar-System Exploration Game (Unity + URP)
 
 ## 1) Vision
 
 A 3D exploration game set in a compact, handcrafted star system. Players can:
 
-* Walk on round planets with **dynamic gravity** (local “down” to planet center).
+* Walk on round planets with **dynamic gravity** (local “down” toward planet center).
 * Fly a ship between bodies within the system.
 * Use a **stargate-like gate** to transition to other locations (scene-streamed).
 
@@ -13,19 +13,49 @@ Primary inspiration: *Outer Wilds* feel (learnable systemic physics + exploratio
 ## 2) Design Pillars
 
 1. **Consistent, learnable physics (not realistic physics)**
-
-   * Gravity, movement, and ship handling should be predictable and tunable.
 2. **Fast iteration**
-
-   * Content and mechanics should be testable quickly in-editor.
 3. **Finishable scope**
-
-   * Gate travel is a stylized transition, not a seamless portal.
 4. **Exploration-first**
+5. **Stylized visuals, readable silhouettes**
 
-   * Minimal combat or complex AI early.
+## 3) Engine & Rendering Decisions
 
-## 3) Initial Scope
+### Engine
+
+* **Unity** 6000.3.2f1
+
+### Render Pipeline
+
+* **URP (Universal Render Pipeline)** for:
+
+  * simpler production path for a first game
+  * broader performance headroom
+  * strong stylized rendering support via Shader Graph + post-processing
+
+**Constraint:** Avoid pipeline switching later (treat URP as fixed).
+
+## 4) Visual Target (URP Stylized)
+
+### Look goals
+
+* “Readable, cinematic stylized sci-fi” rather than realism
+* Strong shape language, emissive accents, controlled palette
+* Planets feel large through scale cues and atmosphere, not ultra-detail
+
+### Key visual ingredients
+
+* **Post-processing:** color grading + bloom + subtle vignette (style cohesion)
+* **Atmosphere:** fog/height fog style effect (can be faked with shaders/volumes), simple atmospheric scattering cues
+* **Rim lighting / fresnel:** for silhouettes on characters/props and planet edges
+* **Emissives:** gates, ship panels, POIs for navigation readability
+* **LOD + culling:** keep far objects cheap (space scenes balloon fast)
+
+### Non-goals (early)
+
+* Realistic volumetrics, path-traced lighting, ultra-high fidelity materials
+* Complex portal rendering (no see-through gates in slice)
+
+## 5) Initial Scope
 
 ### Included (MVP / Vertical Slice)
 
@@ -36,221 +66,182 @@ Primary inspiration: *Outer Wilds* feel (learnable systemic physics + exploratio
 * Basic interactions (scan / collect / trigger)
 * Basic UI (prompt, objective, minimal HUD)
 * Save/load for player progression state (simple)
+* URP-based stylized lighting + post baseline pass
 
 ### Explicitly Not Included (for now)
 
-* Seamless travel between star systems (use “hyperdrive” transition later)
+* Seamless travel between star systems (later via “hyperdrive” transition)
 * True see-through portals
 * Real-time orbital simulation
 * Large procedural galaxy generation
 * Complex NPC AI / combat systems
-* Multiplayer / networking
+* Multiplayer
 
-## 4) Scale Targets (Game Scale)
-
-Use “game scale,” not astronomical scale.
+## 6) Scale Targets (Game Scale)
 
 * **System radius:** ~5–20 km (Unity units as meters)
 * **Planet radius:** ~200–1500 m
 * **Moon radius:** ~50–400 m
-* Orbits: start static; fake motion later only if needed for feel
+* Orbits: start static; motion later
 
-Goal: bodies feel big enough to explore, small enough to keep physics stable and traversal times reasonable.
+## 7) Core Technical Decisions
 
-## 5) Engine Choice Rationale
+### 7.1 Coordinate Strategy
 
-### Recommended: Unity
+* Single-system “float bubble” for MVP.
+* Add **floating origin** if jitter becomes noticeable:
 
-* Strong 3D workflow + ecosystem
-* Mature approaches for additive scenes / streaming
-* Easier path to completion for a first game of this type
-
-Godot remains viable, but Unity reduces the odds of getting stuck on engine-level complexity.
-
-## 6) Core Technical Decisions
-
-### 6.1 Coordinate Strategy
-
-* **Single-system “float bubble”** for MVP.
-* Add **floating origin** only if jitter becomes noticeable:
-
-  * When player/ship exceeds a threshold (e.g., 2–5 km from origin), shift world so player returns near (0,0,0).
+  * When player/ship exceeds threshold (e.g., 2–5 km), shift world so player returns near (0,0,0).
   * Shift all relevant objects consistently.
-  * Store “absolute” positions separately if needed (optional for MVP).
 
-### 6.2 Gravity Model
+### 7.2 Gravity Model
 
 * Each gravitating body defines a field:
 
   * Direction: toward body center
   * Magnitude: curve by distance (tunable)
-  * Optional “surface band” where gravity is approximately constant
-* At runtime:
+* Choose dominant body per entity at runtime.
+* Ship gravity can be always-on or proximity-based (pick what feels best).
 
-  * Determine **dominant gravity body** for the player (highest influence).
-  * Align player “up” opposite gravity direction.
-* Ship:
+### 7.3 Controllers (Separate by Mode)
 
-  * Apply gravity always, or only near bodies (choose whichever feels better).
+* On-foot controller: spherical gravity + grounding + step/slope handling
+* Ship controller: flight model (arcade-leaning), optional auto-stabilize
 
-### 6.3 Controllers (Separate by Mode)
-
-* **On-foot controller**: spherical gravity + grounding + step/slope handling
-* **Ship controller**: flight model (arcade-leaning), optional auto-stabilize
-* Do not try to unify these into one movement system early.
-
-### 6.4 Scene & Streaming Strategy
-
-Start simple, evolve as needed:
+### 7.4 Scene & Streaming Strategy
 
 * Scene `Core`: player, ship, UI, managers (persistent)
 * Scene `System_A`: planets, props, POIs
 * Scene `Gate_Destination_A`: destination environment
-* Transition system loads/unloads scenes asynchronously.
+* Gate transition loads/unloads scenes asynchronously.
 
-### 6.5 Gate Transition Strategy (Stylized Load)
+### 7.5 Gate Transition Strategy (Stylized Load)
 
-Not a true portal.
+Not a true portal:
 
-1. Player enters gate trigger
-2. Lock input + play VFX/audio
-3. Fade/warp tunnel effect
-4. Async load target scene
-5. Teleport to exit anchor
-6. Fade in + restore input
+1. Trigger → lock input
+2. VFX/audio + fade/warp
+3. Async load target
+4. Teleport to exit anchor
+5. Fade in → restore input
 
-## 7) Proposed Architecture
+## 8) URP Production Setup (baseline checklist)
 
-### 7.1 Gameplay Systems (Suggested Components)
+This is the “don’t shoot yourself in the foot” setup for a first stylized 3D project.
 
-* `GravityBody`
+### Rendering baseline
 
-  * radius, gravity curve, priority, atmosphere band (optional)
-* `GravitySolver`
+* Use the URP Renderer with:
 
-  * finds dominant body for an entity each frame / fixed step
+  * **Opaque Texture** only if needed (some effects require it; otherwise keep off)
+  * **Depth Texture** only if needed (fog/edge effects; otherwise keep off)
+* Start with a single main directional light + limited additional lights (budget discipline)
+* Prefer baked lighting for dense POIs/interiors once the layout stabilizes
+
+### Post-processing baseline
+
+* Global Volume:
+
+  * Tonemapping + color adjustments (style)
+  * Bloom (for emissives/gates)
+  * Vignette (subtle)
+  * Optional film grain (subtle)
+* Keep the effect stack minimal until the slice is fun.
+
+### Materials/shaders
+
+* Standard URP Lit for most things initially (ship/props)
+* Shader Graph only for:
+
+  * atmospheres (planet edge glow)
+  * rim/fresnel stylization
+  * gate VFX shaders
+  * decals/POI highlights (if needed)
+
+### Performance guardrails (early)
+
+* LODs for planets/large meshes
+* Distance-based disabling for small props
+* Avoid expensive real-time shadows for lots of lights
+* Keep particle counts sane (especially during gate VFX)
+
+## 9) Proposed Architecture
+
+### 9.1 Gameplay Systems (Suggested Components)
+
+* `GravityBody` (radius, curve, priority)
+* `GravitySolver` (dominant body)
 * `CharacterMotorSpherical`
-
-  * movement, grounding, alignment to local-up
 * `ShipController`
-
-  * thrust, rotation, stabilization modes
 * `FloatingOriginManager` (optional for MVP)
+* `GateController` (transition orchestration)
+* `InteractionSystem` (raycast + prompt)
+* `SaveSystem` (simple flags/state)
 
-  * monitors player distance and shifts world
-* `GateController`
+### 9.2 Visual Systems (URP)
 
-  * handles triggers, VFX timing, scene transitions, spawn anchors
-* `InteractionSystem`
+* `PostProcessProfile` (global volume asset)
+* `GateVFX` (VFX Graph or Particle System + Shader Graph)
+* `PlanetAtmosphere` (Shader Graph material + parameters)
+* `LODProfiles` (per major asset type)
 
-  * raycast + prompts + interact events
-* `SaveSystem`
+## 10) Milestones & Deliverables
 
-  * minimal state: current scene, spawn point, collected items, flags
+### Milestone 0: Tooling + URP Baseline (1–2 sessions)
 
-### 7.2 Data Model
+* Unity project set to **URP**
+* Folder structure + conventions
+* Global post volume with a placeholder stylized grade
+* Test scene with planet sphere + lighting sanity
 
-Use ScriptableObjects for tunables:
-
-* Gravity presets (planet, moon, asteroid)
-* Ship handling presets
-* Gate destination definitions (scene name, exit anchor id, VFX profile)
-
-## 8) Milestones & Deliverables
-
-### Milestone 0: Tooling & Repo Setup (1 session)
-
-* Unity project + version control
-* Simple build pipeline (local)
-* Coding conventions + folder structure
-* Minimal CI optional (build checks later)
-
-**Done when:** project opens cleanly, basic scene runs, repo organized.
+**Done when:** URP visuals are stable and consistent; project runs clean.
 
 ---
 
-### Milestone 1: Core Gravity & On-foot Prototype
+### Milestone 1: Core Gravity + On-foot Prototype
 
-* One sphere “planet”
-* Player can walk around entire surface
-* Camera stays stable, horizon behaves
-* Jumping + falling works
-
-**Done when:** player can circumnavigate without glitches, grounding feels acceptable.
+* Walkable planet sphere with local gravity
+* Camera stability and “up” alignment
 
 ---
 
 ### Milestone 2: Ship Prototype + Planet-to-Space Loop
 
-* Ship spawns on/near planet
-* Player can board/unboard
-* Fly to moon/asteroid
-* Land and walk there (even if landing is forgiving)
-
-**Done when:** a complete loop works: walk → board → fly → land → walk.
+* Board/unboard ship
+* Fly to moon/asteroid, land, walk
 
 ---
 
 ### Milestone 3: Gate Transition (Styled Loading)
 
-* Gate ring + trigger
-* VFX + fade sequence
-* Destination scene loads and places player at exit gate
-* Return gate (optional)
-
-**Done when:** gate travel feels like “Stargate” and is reliable.
+* Gate trigger + VFX + async scene load + exit anchors
 
 ---
 
-### Milestone 4: Vertical Slice Content
+### Milestone 4: Vertical Slice Content + Style Pass
 
-* 2–3 POIs on planet
-* 1 POI on moon/asteroid
-* Simple objective:
+* 2–3 POIs on planet, 1 on moon/asteroid
+* Simple objective loop
+* First real stylized materials + atmosphere + emissive navigation cues
 
-  * scan / retrieve / activate / puzzle allowing a repeatable end-state
-* Basic UI prompts + simple save flags
+## 11) Risks & Mitigations
 
-**Done when:** a player can complete the objective in 15–30 minutes.
+* **Overbuilding tech:** ship a slice first; defer fancy portal rendering
+* **Spherical controller complexity:** prototype rough → iterate on feel
+* **Precision/jitter:** keep system compact; add floating origin only if needed
+* **Content bottleneck:** build reusable POI templates; keep art scope controlled
+* **URP performance traps:** minimal post stack, cautious shadows, early LODs
 
-## 9) Risks & Mitigations
+## 12) Definition of Done (Vertical Slice)
 
-### Risk: Overbuilding “engine tech”
+* Stable on-foot spherical gravity on one planet
+* Stable ship travel between two bodies
+* Reliable gate transition to a second scene
+* Objective can be completed end-to-end (15–30 minutes)
+* Minimal save state persists key flags
+* Stylized URP look established (post + emissives + atmosphere cues)
+* Build runs outside editor
 
-**Mitigation:** Ship a vertical slice with minimal tech; add complexity only when it blocks content.
+## 13) Next Actions
 
-### Risk: Spherical character controller eats weeks
-
-**Mitigation:** Prototype quickly with crude physics, then iterate only on the feel that matters (grounding + camera + slopes).
-
-### Risk: Jitter/precision issues
-
-**Mitigation:** Keep system scale compact; add floating origin only if needed.
-
-### Risk: Portal ambitions
-
-**Mitigation:** Gate = stylized load transition. True portal deferred.
-
-### Risk: Content creation bottleneck
-
-**Mitigation:** Build one “template POI” and reuse/iterate. Avoid bespoke art early.
-
-## 10) Definition of Done (Vertical Slice)
-
-* Stable on-foot spherical gravity on at least one planet
-* Stable ship travel between at least two bodies
-* Gate transition to a second scene works 100% reliably across many uses
-* A simple objective can be completed end-to-end
-* Minimal save state persists the key flags
-* Build can be produced and run outside the editor
-
-## 11) Next Actions (Concrete)
-
-1. Create `Core` scene and `System_A` scene
-2. Implement `GravityBody` + `GravitySolver`
-3. Build the on-foot controller prototype (rough first)
-4. Add ship controller with a simple flight model
-5. Add gate transition manager with async scene load + spawn anchors
-6. Add one small objective and call it the slice
-
-If you want, I can also turn this into a **task breakdown checklist** (GitHub Issues style) with ~30–60 bite-sized tickets ordered by dependency.
+(stub)
