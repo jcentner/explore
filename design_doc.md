@@ -165,9 +165,98 @@ This is the “don’t shoot yourself in the foot” setup for a first stylized 
 * Avoid expensive real-time shadows for lots of lights
 * Keep particle counts sane (especially during gate VFX)
 
-## 9) Proposed Architecture
+## 9) Folder Structure
 
-### 9.1 Gameplay Systems (Suggested Components)
+```
+Assets/
+├── _Project/                 # All game-specific content (underscore sorts to top)
+│   ├── Scripts/
+│   │   ├── Core/             # Singletons, managers, base classes, interfaces
+│   │   ├── Gravity/          # GravityBody, GravitySolver, IGravityAffected
+│   │   ├── Player/           # CharacterMotorSpherical, camera, states
+│   │   ├── Ship/             # ShipController, boarding, flight model
+│   │   ├── Gates/            # GateController, transition orchestration
+│   │   ├── Interaction/      # InteractionSystem, prompts, collectibles
+│   │   ├── Save/             # SaveSystem, serialization
+│   │   └── UI/               # HUD, menus, prompts
+│   ├── Prefabs/
+│   │   ├── Player/
+│   │   ├── Ship/
+│   │   ├── Environment/
+│   │   └── UI/
+│   ├── Materials/
+│   ├── Shaders/              # Shader Graph assets
+│   ├── VFX/                  # VFX Graph + Particle Systems
+│   ├── Audio/
+│   │   ├── SFX/
+│   │   └── Music/
+│   ├── Textures/
+│   ├── Models/
+│   ├── Animations/
+│   └── Scenes/
+│       ├── Core.unity        # Persistent (player, ship, UI, managers)
+│       ├── System_A.unity    # Main star system
+│       └── Gate_Dest_A.unity # Gate destination
+├── Settings/                 # URP assets, post-processing volumes, input actions
+└── ThirdParty/               # Imported packages, keep separate for upgrades
+```
+
+**Conventions:**
+* Prefix project folder with `_` to sort to top in Unity
+* One prefab per logical entity
+* Materials named: `M_[Object]_[Variant]` (e.g., `M_Planet_Rocky`)
+* Shaders named: `SH_[Purpose]` (e.g., `SH_Atmosphere`)
+
+## 10) Assembly Definitions
+
+Use Assembly Definitions (`.asmdef`) to:
+* **Speed up iteration** – Only recompile changed assemblies
+* **Enforce architecture** – Prevent circular dependencies
+* **Cleaner AI context** – Smaller, focused compilation units
+
+### Assembly Structure
+
+```
+Game.Core.asmdef          → Core/, interfaces, utilities
+    ↑
+Game.Gravity.asmdef       → Gravity/ (depends on Core)
+    ↑
+Game.Player.asmdef        → Player/, Ship/ (depends on Core, Gravity)
+    ↑
+Game.World.asmdef         → Gates/, Interaction/, Save/ (depends on Core, Gravity)
+    ↑
+Game.UI.asmdef            → UI/ (depends on Core)
+```
+
+**Setup:** Create `.asmdef` files in each Scripts subfolder. Reference dependencies explicitly.
+
+## 11) Input System Strategy
+
+Using Unity's **new Input System** (package already installed).
+
+### Action Maps
+
+| Action Map | Actions | Notes |
+|------------|---------|-------|
+| **Player** | Move, Look, Jump, Interact, Board | On-foot controls |
+| **Ship** | Thrust, Pitch, Yaw, Roll, Stabilize, Exit | Flight controls |
+| **UI** | Navigate, Submit, Cancel, Pause | Menu navigation |
+
+### Implementation Pattern
+
+* Use `PlayerInput` component with **Invoke C# Events** (not SendMessage)
+* Create `InputReader.cs` ScriptableObject to decouple input from consumers
+* Switch Action Maps on mode change (on-foot ↔ ship ↔ UI)
+* Support rebinding via Input System's built-in rebind UI
+
+### Control Scheme
+
+* **Keyboard + Mouse** (primary)
+* **Gamepad** (secondary, test periodically)
+
+## 12) Proposed Architecture
+
+### 12.1 Gameplay Systems (Suggested Components)
 
 * `GravityBody` (radius, curve, priority)
 * `GravitySolver` (dominant body)
@@ -178,14 +267,156 @@ This is the “don’t shoot yourself in the foot” setup for a first stylized 
 * `InteractionSystem` (raycast + prompt)
 * `SaveSystem` (simple flags/state)
 
-### 9.2 Visual Systems (URP)
+### 12.2 Gravity Formula
+
+**Recommended approach: Linear falloff with hard cutoff**
+
+```
+gravityStrength = baseStrength * (1 - (distance / maxRange))
+if (distance > maxRange) gravityStrength = 0
+```
+
+**Why linear over inverse-square:**
+* Predictable, tunable gameplay feel
+* No infinite gravity at surface edge cases
+* Easier to balance planet "pull zones"
+
+**Parameters per GravityBody:**
+* `baseStrength` (m/s²) – gravity at surface (Earth ≈ 9.8, Moon ≈ 1.6)
+* `maxRange` (m) – distance where gravity reaches zero
+* `priority` (int) – tie-breaker when in overlapping fields
+
+**Alternative (arcade feel):** Constant gravity within radius, instant zero outside. Simpler but less immersive.
+
+### 12.3 Visual Systems (URP)
 
 * `PostProcessProfile` (global volume asset)
 * `GateVFX` (VFX Graph or Particle System + Shader Graph)
 * `PlanetAtmosphere` (Shader Graph material + parameters)
 * `LODProfiles` (per major asset type)
 
-## 10) Milestones & Deliverables
+## 13) Code Conventions
+
+### Naming
+
+| Element | Convention | Example |
+|---------|------------|--------|
+| Classes | PascalCase | `GravityBody` |
+| Interfaces | I + PascalCase | `IGravityAffected` |
+| Public methods | PascalCase | `ApplyGravity()` |
+| Private fields | _camelCase | `_currentVelocity` |
+| Serialized private | camelCase + attribute | `[SerializeField] float fallSpeed` |
+| Constants | UPPER_SNAKE | `MAX_GRAVITY_SOURCES` |
+| Events | On + PascalCase | `OnLanded`, `OnBoardedShip` |
+
+### Structure
+
+```csharp
+public class ExampleComponent : MonoBehaviour
+{
+    // === Inspector Fields ===
+    [Header("Configuration")]
+    [SerializeField] private float speed = 5f;
+    [SerializeField] private Transform target;
+    
+    // === Public Properties ===
+    public bool IsActive => _isActive;
+    
+    // === Private Fields ===
+    private bool _isActive;
+    private Rigidbody _rb;
+    
+    // === Unity Lifecycle ===
+    private void Awake()
+    {
+        _rb = GetComponent<Rigidbody>();
+    }
+    
+    private void Update() { }
+    private void FixedUpdate() { }
+    
+    // === Public Methods ===
+    public void Activate() { }
+    
+    // === Private Methods ===
+    private void HandleMovement() { }
+}
+```
+
+### Best Practices
+
+* **Cache components** in `Awake()`, never in `Update()`
+* **Use `[SerializeField] private`** over `public` fields
+* **Remove empty callbacks** (`Update()`, `FixedUpdate()`) – they have overhead
+* **Avoid `Find*()` at runtime** – use direct references or ServiceLocator
+* **One class per file**, filename matches class name
+* **Use `[Header]` and `[Tooltip]`** for inspector clarity
+* **XML docs on public APIs** for Copilot context
+
+### Unity-Specific
+
+* Prefer **Sphere > Capsule > Box >> Mesh** colliders (performance)
+* Use **object pooling** for frequently spawned objects (VFX, projectiles)
+* Set **Asset Serialization to Force Text** (Edit > Project Settings > Editor) for Git
+* **Never use `.material`** in loops – cache or use `.sharedMaterial`
+
+## 14) AI Development Workflow
+
+### Key Context Files
+
+Maintain these files to give Copilot effective context:
+
+| File | Purpose |
+|------|--------|
+| `design_doc.md` | Vision, scope, architecture (this file) |
+| `CHANGELOG.md` | Track what's implemented, current status |
+| `Assets/_Project/Scripts/README.md` | Code conventions quick reference |
+| `specs/*.spec.md` | Per-system specifications |
+
+### Spec Sheet Pattern
+
+For each major system, maintain a spec file:
+
+```markdown
+# gravity-system.spec.md
+
+## Purpose
+Manage gravitational attraction toward celestial bodies.
+
+## Interfaces
+- IGravityAffected: Entities that respond to gravity
+- IGravitySource: Bodies that generate gravity fields
+
+## Components
+- GravityBody: Defines a gravity source (radius, strength, priority)
+- GravitySolver: Calculates dominant gravity for an entity
+
+## Behaviors
+- Entity enters gravity field → GravitySolver recalculates
+- Multiple overlapping fields → highest priority wins
+- Ship can toggle gravity response
+
+## Edge Cases
+- Exactly equidistant from two bodies → use priority
+- Zero-g zones → explicitly defined, not emergent
+```
+
+### Prompting Tips
+
+* **Reference spec files** when asking for implementation
+* **Include file paths** when discussing specific code
+* **State the current milestone** for scope context
+* **Ask for one system at a time** – avoid sprawling requests
+
+### Session Workflow
+
+1. Start session: Share `design_doc.md` + relevant spec
+2. State current milestone and goal
+3. Implement incrementally, test each piece
+4. Update `CHANGELOG.md` with progress
+5. End session: Note what's next in `## 15) Next Actions`
+
+## 15) Milestones & Deliverables
 
 ### Milestone 0: Tooling + URP Baseline (1–2 sessions)
 
@@ -224,7 +455,7 @@ This is the “don’t shoot yourself in the foot” setup for a first stylized 
 * Simple objective loop
 * First real stylized materials + atmosphere + emissive navigation cues
 
-## 11) Risks & Mitigations
+## 16) Risks & Mitigations
 
 * **Overbuilding tech:** ship a slice first; defer fancy portal rendering
 * **Spherical controller complexity:** prototype rough → iterate on feel
@@ -232,7 +463,7 @@ This is the “don’t shoot yourself in the foot” setup for a first stylized 
 * **Content bottleneck:** build reusable POI templates; keep art scope controlled
 * **URP performance traps:** minimal post stack, cautious shadows, early LODs
 
-## 12) Definition of Done (Vertical Slice)
+## 17) Definition of Done (Vertical Slice)
 
 * Stable on-foot spherical gravity on one planet
 * Stable ship travel between two bodies
@@ -242,6 +473,12 @@ This is the “don’t shoot yourself in the foot” setup for a first stylized 
 * Stylized URP look established (post + emissives + atmosphere cues)
 * Build runs outside editor
 
-## 13) Next Actions
+## 18) Next Actions
 
-(stub)
+* [ ] Create folder structure in Unity project
+* [ ] Set up Assembly Definitions
+* [ ] Configure Input Actions asset with action maps
+* [ ] Create initial spec files for Gravity, Player, Ship systems
+* [ ] Set Asset Serialization to Force Text
+* [ ] Create test scene with planet sphere + directional light
+* [ ] Implement GravityBody + GravitySolver (Milestone 1 start)
