@@ -7,14 +7,58 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Current Milestone
-**Milestone 1: Core Gravity + On-foot Prototype**
+**Milestone 1: Core Gravity + On-foot Prototype** - IN PROGRESS
+
+### Completed This Session
+- ✅ Core interfaces (IGravitySource, IGravityAffected)
+- ✅ GravityManager singleton with priority-based selection
+- ✅ GravityBody component for planets/asteroids
+- ✅ GravitySolver for entities receiving gravity
+- ✅ InputReader ScriptableObject (decoupled input)
+- ✅ CharacterMotorSpherical (spherical gravity movement)
+- ✅ PlayerCamera (third-person with gravity alignment)
+- ✅ PlayerInitializer (runtime dependency wiring)
+- ✅ TestGravity scene configured with Player, Planet, Asteroid
 
 ### Next Up
-- Implement GravityBody and GravitySolver
-- CharacterMotorSpherical for spherical gravity walking
-- Camera stability on curved surfaces
+- Test and refine movement feel
+- Add debug visualization (gravity field gizmos)
+- Tune camera collision and smoothing
 
 ---
+
+## [0.2.0] - 2026-01-03
+
+### Milestone 1: Core Gravity + On-foot Prototype - INITIAL IMPLEMENTATION
+
+### Added
+- **Core Interfaces** (`Scripts/Core/`)
+  - `IGravitySource` - Contract for gravity-generating bodies
+  - `IGravityAffected` - Contract for entities receiving gravity
+
+- **Gravity System** (`Scripts/Gravity/`)
+  - `GravityManager` - Singleton registry, priority-based source selection
+  - `GravityBody` - MonoBehaviour for planets/asteroids with linear falloff
+  - `GravitySolver` - Queries GravityManager and applies forces to Rigidbody
+
+- **Player System** (`Scripts/Player/`)
+  - `InputReader` - ScriptableObject decoupling input from consumers
+  - `CharacterMotorSpherical` - Movement, jumping, ground detection on curved surfaces
+  - `PlayerCamera` - Third-person orbit camera with gravity-aligned up vector
+  - `PlayerInitializer` - Bootstrap component that wires dependencies at runtime
+
+- **Scene Setup**
+  - Planet_Test now has GravityBody (strength 15, range 200)
+  - Player GameObject with capsule body, all components wired
+  - Asteroid_Test sphere with lower priority GravityBody
+  - Materials: M_Player (blue), M_Asteroid (gray)
+  - InputReader and InputActionAsset in Resources folder
+
+### Technical Notes
+- Gravity uses linear falloff: `strength = baseStrength * (1 - distance/maxRange)`
+- Priority determines which gravity source wins (higher = dominant)
+- Distance used as tiebreaker when priorities are equal
+- Camera aligns up vector smoothly to match player's gravity direction
 
 ## [0.1.0] - 2026-01-03
 
@@ -55,6 +99,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ---
 
 ## Session Log
+
+### 2026-01-03 (Session 2)
+- Implemented core gravity system (GravityManager, GravityBody, GravitySolver)
+- Created player movement system (CharacterMotorSpherical, PlayerCamera, InputReader)
+- Set up TestGravity scene with Player, Planet, and Asteroid
+- Fixed InputReader to load InputActionAsset from Resources as fallback
+- Created PlayerInitializer for runtime dependency injection
+- **Milestone 1 initial implementation complete!**
 
 ### 2026-01-03 (Session 1)
 - Project review and design doc enhancement
