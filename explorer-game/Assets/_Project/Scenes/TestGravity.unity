@@ -638,7 +638,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game.Gravity::Explorer.Gravity.GravityBody
   _baseStrength: 10
   _maxRange: 50
-  _priority: -1
+  _priority: 0
   _useColliderRadius: 1
   _surfaceRadius: 50
 --- !u!23 &1664903007

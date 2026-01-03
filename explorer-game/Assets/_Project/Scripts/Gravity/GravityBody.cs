@@ -54,7 +54,7 @@ namespace Explorer.Gravity
 
         private void OnEnable()
         {
-            GravityManager.Instance.Register(this);
+            GravityManager.Instance?.Register(this);
         }
 
         private void OnDisable()

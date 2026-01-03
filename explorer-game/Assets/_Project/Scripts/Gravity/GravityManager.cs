@@ -12,14 +12,21 @@ namespace Explorer.Gravity
     {
         // === Singleton ===
         private static GravityManager _instance;
+        private static bool _applicationIsQuitting;
+
         public static GravityManager Instance
         {
             get
             {
+                if (_applicationIsQuitting)
+                {
+                    return null;
+                }
+
                 if (_instance == null)
                 {
                     _instance = FindFirstObjectByType<GravityManager>();
-                    if (_instance == null)
+                    if (_instance == null && !_applicationIsQuitting)
                     {
                         var go = new GameObject("GravityManager");
                         _instance = go.AddComponent<GravityManager>();
@@ -42,6 +49,19 @@ namespace Explorer.Gravity
             }
             _instance = this;
             DontDestroyOnLoad(gameObject);
+        }
+
+        private void OnApplicationQuit()
+        {
+            _applicationIsQuitting = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance == this)
+            {
+                _instance = null;
+            }
         }
 
         // === Public Methods ===

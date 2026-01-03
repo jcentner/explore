@@ -100,7 +100,15 @@ namespace Explorer.Gravity
                 return;
             }
 
-            _dominantSource = GravityManager.Instance.GetDominantSource(transform.position);
+            var manager = GravityManager.Instance;
+            if (manager == null)
+            {
+                _currentGravity = Vector3.zero;
+                _dominantSource = null;
+                return;
+            }
+
+            _dominantSource = manager.GetDominantSource(transform.position);
 
             if (_dominantSource != null)
             {
