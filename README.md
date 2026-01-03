@@ -35,7 +35,7 @@ explore/
 
 ## Current Milestone
 
-**Milestone 0: Tooling + URP Baseline**
+**Milestone 1: Core Gravity + On-foot Prototype** (Milestone 0 complete ✅)
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed progress.
 
