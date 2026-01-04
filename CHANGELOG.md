@@ -6,6 +6,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Milestone 3 Planning: Advanced Gravity System
+
+#### Added
+- **Milestone 3 Plan** (`plans/milestone-3.plan.md`)
+  - Multi-body gravity accumulation architecture
+  - Smooth orientation transitions (no jarring snaps)
+  - Lagrange-point emergent behavior design
+  - Gravity UI indicator specification
+  - Five implementation phases with task breakdowns
+  - GravityPreset ScriptableObject for designer tuning
+
+---
+
 ### Milestone 6 Planning: UI Foundation
 
 #### Added
