@@ -68,19 +68,24 @@ public class Example : MonoBehaviour
 - Use `[Header("Section")]` and `[Tooltip("...")]` for inspector clarity
 - Add XML docs on public APIs for better Copilot context
 - Use object pooling for frequently spawned objects (VFX, projectiles)
+- **Use `Tags.PLAYER` instead of `"Player"` magic strings** (from `Explorer.Core`)
+- **Use `Layers.GROUND_MASK` for physics queries** (from `Explorer.Core`)
+- **Use `InteractionPromptService.Show()` for UI prompts** (decouples from UI assembly)
 
 ## Assembly Definitions
 
 Scripts are organized into assemblies to speed compilation and enforce dependencies:
 
 ```
-Game.Core.asmdef          → Core/, interfaces, utilities
+Game.Core.asmdef          → Interfaces, constants (Tags, Layers), service locators
     ↑
 Game.Gravity.asmdef       → Gravity/ (depends on Core)
     ↑
 Game.Player.asmdef        → Player/ (depends on Core, Gravity)
     ↑
-Game.Ship.asmdef          → Ship/ (depends on Core, Gravity, Player)
+Game.Ship.asmdef          → Ship/ (depends on Core, Gravity, Player) — no UI dependency
+    
+Game.UI.asmdef            → UI/ (depends on Core) — implements Core interfaces
 ```
 
 ## Validation After Changes

@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
+using Explorer.Core;
 using Explorer.Player;
 
 namespace Explorer.Ship
@@ -22,6 +22,9 @@ namespace Explorer.Ship
         
         [SerializeField, Tooltip("Exit point transform (player spawns here on disembark)")]
         private Transform _exitPoint;
+        
+        [SerializeField, Tooltip("Input reader for interaction events")]
+        private InputReader _inputReader;
         
         [Header("Settings")]
         [SerializeField, Tooltip("Radius of boarding trigger zone")]
@@ -67,6 +70,10 @@ namespace Explorer.Ship
             if (_shipInput == null)
                 _shipInput = GetComponentInParent<ShipInput>();
             
+            // Auto-find InputReader if not assigned
+            if (_inputReader == null)
+                _inputReader = Resources.Load<InputReader>("InputReader");
+            
             // Validate references
             if (_shipCamera == null)
                 Debug.LogWarning($"ShipBoardingTrigger on {name}: ShipCamera not assigned!");
@@ -80,27 +87,46 @@ namespace Explorer.Ship
             // Hide boarding prompt initially
             if (_boardingPromptUI != null)
                 _boardingPromptUI.SetActive(false);
+            
+            // Subscribe to input events
+            if (_inputReader != null)
+            {
+                _inputReader.OnInteract += HandleInteract;
+                _inputReader.OnShipExit += HandleShipExit;
+            }
         }
         
-        private void Update()
+        private void OnDestroy()
         {
-            // Handle F key input
-            if (Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame)
+            // Unsubscribe from input events
+            if (_inputReader != null)
             {
-                if (_isPiloting)
-                {
-                    TryDisembark();
-                }
-                else if (_isPlayerInRange)
-                {
-                    TryBoard();
-                }
+                _inputReader.OnInteract -= HandleInteract;
+                _inputReader.OnShipExit -= HandleShipExit;
+            }
+        }
+        
+        private void HandleInteract()
+        {
+            // Player pressed interact while on foot - try to board
+            if (_isPlayerInRange && !_isPiloting)
+            {
+                TryBoard();
+            }
+        }
+        
+        private void HandleShipExit()
+        {
+            // Player pressed exit while in ship - try to disembark
+            if (_isPiloting)
+            {
+                TryDisembark();
             }
         }
         
         private void OnTriggerEnter(Collider other)
         {
-            if (!other.CompareTag("Player")) return;
+            if (!other.CompareTag(Tags.PLAYER)) return;
             if (_isPiloting) return;
             
             _isPlayerInRange = true;
@@ -111,18 +137,18 @@ namespace Explorer.Ship
             if (_playerStateController == null)
                 _playerStateController = other.GetComponentInParent<PlayerStateController>();
             
-            // Show UI prompt (use BoardingPrompt singleton or serialized reference)
+            // Show UI prompt (use serialized reference or service locator)
             if (_boardingPromptUI != null)
                 _boardingPromptUI.SetActive(true);
             else
-                Explorer.UI.BoardingPrompt.GetOrCreate().Show("Press [F] to board ship");
+                InteractionPromptService.Show("Press [F] to board ship");
             
             OnPlayerInRange?.Invoke();
         }
         
         private void OnTriggerExit(Collider other)
         {
-            if (!other.CompareTag("Player")) return;
+            if (!other.CompareTag(Tags.PLAYER)) return;
             
             _isPlayerInRange = false;
             
@@ -130,7 +156,7 @@ namespace Explorer.Ship
             if (_boardingPromptUI != null)
                 _boardingPromptUI.SetActive(false);
             else
-                Explorer.UI.BoardingPrompt.Instance?.Hide();
+                InteractionPromptService.Hide();
             
             OnPlayerOutOfRange?.Invoke();
         }
@@ -158,7 +184,7 @@ namespace Explorer.Ship
             if (_boardingPromptUI != null)
                 _boardingPromptUI.SetActive(false);
             else
-                Explorer.UI.BoardingPrompt.Instance?.Hide();
+                InteractionPromptService.Hide();
             
             // Use state controller for proper transition
             _playerStateController.BoardShip(transform, _shipCamera, _shipInput);

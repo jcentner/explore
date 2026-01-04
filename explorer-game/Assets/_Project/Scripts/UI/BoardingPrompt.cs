@@ -1,14 +1,16 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Explorer.Core;
 
 namespace Explorer.UI
 {
     /// <summary>
     /// Creates and manages a simple "Press [F] to board" prompt.
     /// Auto-creates the Canvas and UI elements on Awake.
+    /// Implements IInteractionPrompt for decoupled access.
     /// </summary>
-    public class BoardingPrompt : MonoBehaviour
+    public class BoardingPrompt : MonoBehaviour, IInteractionPrompt
     {
         // === Inspector Fields ===
         [Header("Settings")]
@@ -27,6 +29,11 @@ namespace Explorer.UI
         private TextMeshProUGUI _text;
         private float _targetAlpha;
         
+        // === Public Properties ===
+        
+        /// <summary>Whether the prompt is currently visible.</summary>
+        public bool IsVisible => _targetAlpha > 0f;
+        
         // === Singleton ===
         public static BoardingPrompt Instance { get; private set; }
         
@@ -42,6 +49,9 @@ namespace Explorer.UI
             DontDestroyOnLoad(gameObject);
             
             CreateUI();
+            
+            // Register with service locator for decoupled access
+            InteractionPromptService.Register(this);
         }
         
         private void Update()
@@ -59,6 +69,9 @@ namespace Explorer.UI
         
         private void OnDestroy()
         {
+            // Unregister from service locator
+            InteractionPromptService.Unregister(this);
+            
             if (Instance == this)
                 Instance = null;
         }

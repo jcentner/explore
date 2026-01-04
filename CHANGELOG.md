@@ -6,7 +6,38 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Code Quality & Architecture Improvements
+
+#### Changed
+- **Decoupled Ship from UI assembly** - Removed `Game.UI` dependency from `Game.Ship.asmdef`
+  - Created `IInteractionPrompt` interface in `Explorer.Core`
+  - Created `InteractionPromptService` static service locator
+  - `BoardingPrompt` now implements `IInteractionPrompt` and auto-registers
+  - `ShipBoardingTrigger` uses `InteractionPromptService` instead of direct `BoardingPrompt` reference
+
+- **Fixed hardcoded F key** - `ShipBoardingTrigger` now routes through `InputReader` events
+  - Uses `OnInteract` event (Player map) for boarding when in range
+  - Uses `OnShipExit` event (Ship map) for disembarking when piloting
+  - Supports future rebinding without code changes
+
+- **Replaced magic strings with constants**
+  - Created `Tags.cs` in `Explorer.Core` with `PLAYER`, `MAIN_CAMERA`, `GROUND`, `INTERACTABLE`
+  - Created `Layers.cs` with layer indices and pre-computed layer masks
+  - Updated `ShipBoardingTrigger` to use `Tags.PLAYER`
+
+#### Added
+- **Validation attributes on ShipController**
+  - `[Range(0f, 2f)]` on `_gravityMultiplier` to prevent invalid values
+  - `[Range(0.1f, 5f)]` on `_landedVelocityThreshold`
+
+#### Fixed
+- **Scene cleanup**
+  - Added explicit `GravityManager` GameObject (was auto-creating at runtime)
+  - Parented `ShipCamera` to `Ship_Prototype` for logical hierarchy
+
+#### Documentation
+- Updated `player-system.spec.md` - Marked `PlayerStateController` and related components as implemented
+- Updated `ship-system.spec.md` - Added "Deferred Features" table, clarified implementation status
 
 ---
 

@@ -5,7 +5,6 @@
         "Game.Core",
         "Game.Gravity",
         "Game.Player",
-        "Game.UI",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],

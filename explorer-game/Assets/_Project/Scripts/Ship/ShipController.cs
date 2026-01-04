@@ -39,11 +39,11 @@ namespace Explorer.Ship
         [SerializeField, Tooltip("Should ship respond to gravity fields?")]
         private bool _respondToGravity = true;
         
-        [SerializeField, Tooltip("Gravity effect multiplier (0 = immune, 1 = full)")]
+        [SerializeField, Range(0f, 2f), Tooltip("Gravity effect multiplier (0 = immune, 1 = full, 2 = double)")]
         private float _gravityMultiplier = 0.5f;
         
         [Header("Landing")]
-        [SerializeField, Tooltip("Velocity threshold to be considered 'landed' (not just touching)")]
+        [SerializeField, Range(0.1f, 5f), Tooltip("Velocity threshold to be considered 'landed' (not just touching)")]
         private float _landedVelocityThreshold = 0.5f;
         
         // === Events ===

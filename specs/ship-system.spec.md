@@ -10,8 +10,18 @@ Handle ship flight, boarding/disembarking, and space traversal between celestial
 
 - **Arcade feel** – Responsive, not simulation-heavy ✅
 - **Smooth transitions** – Boarding/exiting feels seamless ✅
-- **Optional stabilization** – Auto-level for casual play, manual for control (deferred)
+- **Optional stabilization** – Auto-level for casual play, manual for control 🔲 (Deferred)
 - **Gravity interaction** – Can enable/disable gravity response ✅
+
+## Deferred Features
+
+| Feature | Reason | Target Milestone |
+|---------|--------|------------------|
+| Auto-stabilization | Polish item, not blocking gameplay | Post-MVP |
+| Landing gear visuals | Needs art assets | Post-MVP |
+| ShipLandingGear component | Explicit gear states not needed for MVP | Post-MVP |
+| Ship damage/repair | Combat not in MVP | Future |
+| Multiple ship types | Content scope | Future |
 
 ## Components
 

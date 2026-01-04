@@ -78,18 +78,24 @@ See `.github/instructions/csharp.instructions.md` for full C# conventions.
 - Private fields: `_camelCase`
 - Materials: `M_ObjectName`
 - Shaders: `SH_Purpose`
+- Tags: Use `Tags.PLAYER` from `Explorer.Core`, not magic strings
+- Layers: Use `Layers.GROUND_MASK` from `Explorer.Core`
+
+### Core Utilities
+- `Tags` / `Layers` - Constants for tag/layer names and masks
+- `InteractionPromptService` - Service locator for UI prompts (decouples gameplay from UI)
 
 ### Script Folder Structure
 ```
 Assets/_Project/Scripts/
-├── Core/       # Game.Core.asmdef
+├── Core/       # Game.Core.asmdef - Interfaces, constants, service locators
 ├── Gravity/    # Game.Gravity.asmdef
 ├── Player/     # Game.Player.asmdef
-├── Ship/       # Game.Ship.asmdef
+├── Ship/       # Game.Ship.asmdef (no UI dependency)
 ├── Gates/      # Game.Gates.asmdef
 ├── Interaction/
 ├── Save/
-└── UI/
+└── UI/         # Game.UI.asmdef - Decoupled, implements Core interfaces
 ```
 
 ## Current State

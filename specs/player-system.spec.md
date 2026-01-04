@@ -1,6 +1,6 @@
 # Player System Specification
 
-**Status: 🟡 PARTIALLY IMPLEMENTED (Milestone 1)**
+**Status: ✅ IMPLEMENTED (Milestones 1-2)**
 
 ## Implementation Notes
 
@@ -10,10 +10,11 @@
 | `PlayerCamera` | `Scripts/Player/PlayerCamera.cs` | ✅ Complete |
 | `InputReader` | `Scripts/Player/InputReader.cs` | ✅ Complete |
 | `PlayerInitializer` | `Scripts/Player/PlayerInitializer.cs` | ✅ Complete |
-| `PlayerStateController` | - | ❌ Deferred (Milestone 2+) |
+| `PlayerStateController` | `Scripts/Player/PlayerStateController.cs` | ✅ Complete |
+| `PlayerState` | `Scripts/Player/PlayerState.cs` | ✅ Complete |
+| `IPilotable` | `Scripts/Player/IPilotable.cs` | ✅ Complete |
 
 ### Known Limitations
-- No state machine yet (OnFoot/InShip/etc.) - deferred until ship system
 - Camera collision avoidance fields exist but not fully utilized
 - No slope sliding logic
 
@@ -210,8 +211,9 @@ Transitioning ─(arrive)───────▶ OnFoot
 - [x] Jump and land smoothly
 - [x] Walk over planet curvature without popping
 - [x] Camera follows without nausea-inducing rotation
-- [ ] State machine transitions work correctly (not yet implemented)
-- [ ] Input is ignored during Transitioning state (not yet implemented)
+- [x] State machine transitions work correctly
+- [x] Input is disabled during transitions (fade in/out)
+- [x] Boarding/disembarking works with fade transitions
 
 ## Performance Notes
 

@@ -171,7 +171,7 @@ This is the “don’t shoot yourself in the foot” setup for a first stylized 
 Assets/
 ├── _Project/                 # All game-specific content (underscore sorts to top)
 │   ├── Scripts/
-│   │   ├── Core/             # Singletons, managers, base classes, interfaces
+│   │   ├── Core/             # Interfaces, constants (Tags, Layers), service locators
 │   │   ├── Gravity/          # GravityBody, GravitySolver, IGravityAffected
 │   │   ├── Player/           # CharacterMotorSpherical, camera, states
 │   │   ├── Ship/             # ShipController, boarding, flight model
@@ -217,15 +217,17 @@ Use Assembly Definitions (`.asmdef`) to:
 ### Assembly Structure
 
 ```
-Game.Core.asmdef          → Core/, interfaces, utilities
+Game.Core.asmdef          → Core/, interfaces, utilities, constants (Tags, Layers)
     ↑
 Game.Gravity.asmdef       → Gravity/ (depends on Core)
     ↑
-Game.Player.asmdef        → Player/, Ship/ (depends on Core, Gravity)
+Game.Player.asmdef        → Player/ (depends on Core, Gravity)
+    ↑
+Game.Ship.asmdef          → Ship/ (depends on Core, Gravity, Player)
     ↑
 Game.World.asmdef         → Gates/, Interaction/, Save/ (depends on Core, Gravity)
-    ↑
-Game.UI.asmdef            → UI/ (depends on Core)
+
+Game.UI.asmdef            → UI/ (depends on Core) — decoupled from gameplay systems
 ```
 
 **Setup:** Create `.asmdef` files in each Scripts subfolder. Reference dependencies explicitly.
@@ -295,6 +297,15 @@ if (distance > maxRange) gravityStrength = 0
 * `PlanetAtmosphere` (Shader Graph material + parameters)
 * `LODProfiles` (per major asset type)
 
+### 12.4 Core Utilities
+
+Centralized in `Explorer.Core` to enable decoupled architecture:
+
+* **`Tags`** – String constants for Unity tags (`Tags.PLAYER`, `Tags.GROUND`)
+* **`Layers`** – Layer indices and pre-computed masks (`Layers.GROUND_MASK`)
+* **`InteractionPromptService`** – Service locator for UI prompts (gameplay systems call `Show()`/`Hide()` without UI dependency)
+* **`IInteractionPrompt`** – Interface implemented by UI systems
+
 ## 13) Code Conventions
 
 ### Naming
@@ -307,6 +318,7 @@ if (distance > maxRange) gravityStrength = 0
 | Private fields | _camelCase | `_currentVelocity` |
 | Serialized private | camelCase + attribute | `[SerializeField] float fallSpeed` |
 | Constants | UPPER_SNAKE | `MAX_GRAVITY_SOURCES` |
+| Tags | UPPER_SNAKE in Tags class | `Tags.PLAYER` |
 | Events | On + PascalCase | `OnLanded`, `OnBoardedShip` |
 
 ### Structure
