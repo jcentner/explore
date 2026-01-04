@@ -6,6 +6,32 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Milestone 6 Planning: UI Foundation
+
+#### Added
+- **Milestone 6 Plan** (`plans/milestone-6.plan.md`)
+  - Comprehensive UI framework architecture
+  - UIManager, UIScreen, UIPanel base classes
+  - UIService replacing InteractionPromptService
+  - Pause menu and settings screen design
+  - HUD panels (velocity, ship status, interaction prompts)
+  - Five implementation phases with task breakdowns
+
+- **UI System Specification** (`specs/ui-system.spec.md`)
+  - Architecture and component hierarchy
+  - Input integration with action maps
+  - Visual standards (typography, colors, layout)
+  - Performance guidelines
+  - Testing scenarios
+
+#### Changed
+- **Renumbered milestones in design_doc.md**
+  - New Milestone 6: UI Foundation
+  - Gate Transition moved to Milestone 7
+  - Vertical Slice moved to Milestone 8
+
+---
+
 ### Code Quality & Architecture Improvements
 
 #### Changed

@@ -496,13 +496,34 @@ Manage gravitational attraction toward celestial bodies.
 
 ---
 
-### Milestone 6: Gate Transition (Styled Loading)
+### Milestone 6: UI Foundation
+
+* **Problem:** Current UI is ad-hoc (auto-creating singletons, no consistent architecture)
+* **Solution:** Proper UI framework with clear patterns and reusable components
+* `UIManager` - Central UI controller, manages screen stack and transitions
+* `UIScreen` - Base class for full-screen UI (pause menu, inventory, map)
+* `UIPanel` - Base class for HUD elements (health, prompts, indicators)
+* `UIService` - Service locator replacing ad-hoc singletons
+* HUD System:
+  - Interaction prompts (generalized from BoardingPrompt)
+  - Velocity/altitude indicator
+  - Gravity direction indicator (for Milestone 3)
+  - Ship status panel (when piloting)
+* Screen System:
+  - Pause menu with resume/settings/quit
+  - Settings screen (volume, controls, graphics)
+* Input integration: UI action map, proper focus management
+* Prefab-based UI with consistent styling
+
+---
+
+### Milestone 7: Gate Transition (Styled Loading)
 
 * Gate trigger + VFX + async scene load + exit anchors
 
 ---
 
-### Milestone 7: Vertical Slice Content + Style Pass
+### Milestone 8: Vertical Slice Content + Style Pass
 
 * 2–3 POIs on planet, 1 on moon/asteroid
 * First real stylized materials + atmosphere + emissive navigation cues
