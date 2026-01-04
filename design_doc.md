@@ -445,16 +445,37 @@ Manage gravitational attraction toward celestial bodies.
 
 ---
 
-### Milestone 3: Gate Transition (Styled Loading)
+### Milestone 3: Advanced Gravity System
 
-* Gate trigger + VFX + async scene load + exit anchors
+* Multi-body gravity accumulation (all sources contribute, weighted by mass/distance²)
+* Lagrange point emergent behavior from realistic gravity math
+* Gravity vector UI indicator (lower-center screen showing combined direction + magnitude)
+* Smooth transitions when gravity balance shifts
 
 ---
 
-### Milestone 4: Vertical Slice Content + Style Pass
+### Milestone 4: Enhanced Camera & Movement Controls
+
+* First-person / third-person camera toggle (V key)
+* Player rotation decoupled from gravity when airborne (Q/E to roll)
+* Jetpack system (J to toggle):
+  - Vertical thrust: R (up), F (down)
+  - Horizontal thrust: WASD
+  - 6DOF movement in zero-g or low-g environments
+* Fuel/energy management (optional, tunable)
+
+---
+
+### Milestone 5: Gate Transition (Styled Loading)
+
+* Gate trigger + VFX + async scene load + exit anchors
+* 
+
+---
+
+### Milestone 6: Vertical Slice Content + Style Pass
 
 * 2–3 POIs on planet, 1 on moon/asteroid
-* Simple objective loop
 * First real stylized materials + atmosphere + emissive navigation cues
 
 ## 16) Risks & Mitigations
@@ -469,32 +490,17 @@ Manage gravitational attraction toward celestial bodies.
 
 * Stable on-foot spherical gravity on one planet
 * Stable ship travel between two bodies
+* Realistic multi-body gravity with smooth transitions
+* First/third person camera with airborne rotation control
+* Jetpack for 6DOF player movement
 * Reliable gate transition to a second scene
 * Objective can be completed end-to-end (15–30 minutes)
 * Minimal save state persists key flags
 * Stylized URP look established (post + emissives + atmosphere cues)
 * Build runs outside editor
 
-## 18) Next Actions
+## 18) Documentation & Workflow
 
-**Milestone 0: Tooling + URP Baseline** ✅
-* [x] Create folder structure in Unity project
-* [x] Set up Assembly Definitions
-* [x] Create initial spec files for Gravity, Player, Ship systems
-* [x] Set Asset Serialization to Force Text
-* [x] Create test scene with planet sphere + directional light
-* [x] Set up Global Post Volume with stylized grade
+See `plans/milestone-X.plan.md` for detailed task breakdowns and session logs.
 
-**Milestone 1: Core Gravity + On-foot Prototype** ✅
-* [x] Implement GravityBody + GravitySolver
-* [x] Implement GravityManager singleton
-* [x] Implement CharacterMotorSpherical
-* [x] Implement PlayerCamera with spherical gravity support
-* [x] Implement InputReader (ScriptableObject)
-* [x] Configure TestGravity scene with Player, Planet, Asteroid
-
-**Milestone 2: Ship Prototype** (Next)
-* [ ] Implement ShipController for 6DOF flight
-* [ ] Implement PlayerStateController state machine
-* [ ] Implement boarding/disembarking system
-* [ ] Create test ship prefab
+See `.github/copilot-instructions.md` for AI assistant workflow and current state.

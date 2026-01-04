@@ -17,6 +17,57 @@ Always reference these when working on this project:
 | `design_doc.md` | Architecture, milestones, conventions |
 | `CHANGELOG.md` | Current progress, what's implemented |
 | `specs/*.spec.md` | Per-system specifications |
+| `plans/milestone-X.plan.md` | Detailed step-by-step plan for current milestone |
+
+## Milestone Planning Files
+
+**CRITICAL:** Before starting work on any milestone, create or reference a detailed planning file.
+
+### Location & Naming
+- Store in `plans/` folder at repo root
+- Name format: `milestone-X.plan.md` (e.g., `milestone-2.plan.md`)
+
+### Planning File Structure
+```markdown
+# Milestone X: [Title]
+
+## Overview
+Brief description of milestone goals.
+
+## Prerequisites
+- [ ] What must be complete before starting
+- [ ] Required assets/scenes/dependencies
+
+## Implementation Steps
+
+### Phase 1: [Name]
+- [ ] Step 1.1: Specific task with file paths
+- [ ] Step 1.2: Another specific task
+  - Substep detail if needed
+  - Expected outcome
+
+### Phase 2: [Name]
+- [ ] Step 2.1: ...
+
+## Testing Checklist
+- [ ] Test case 1
+- [ ] Test case 2
+
+## Files to Create/Modify
+| File | Action | Purpose |
+|------|--------|---------|
+| `Scripts/X/Y.cs` | Create | Description |
+
+## Blockers & Decisions
+- Decision needed: [description]
+- Blocked by: [description]
+
+## Session Log
+### [Date] Session N
+- Completed: steps X, Y
+- In progress: step Z
+- Blocked: [if any]
+```
 
 ## Unity MCP Tools
 
@@ -127,29 +178,65 @@ public class Example : MonoBehaviour
 - Spherical gravity walking and jumping works
 - Camera aligns to gravity "up" direction
 
-**Next: Milestone 2 - Ship Flight**
+**Milestone 2: Ship Flight** (Next)
 - `ShipController` for 6DOF flight
 - Boarding/disembarking system
 - `PlayerStateController` state machine
 
-## Implemented Scripts
+**Milestone 3: Advanced Gravity**
+- Multi-body gravity accumulation (realistic physics)
+- Gravity vector UI indicator
+
+**Milestone 4: Enhanced Camera & Movement**
+- First/third person camera toggle
+- Airborne rotation controls (Q/E)
+- Jetpack 6DOF movement
+
+**Milestone 5: Gate Transition**
+- Stargate-style scene transitions
+
+**Milestone 6: Vertical Slice**
+- POIs, objectives, art pass
+
+## Session Workflow
 
 ```
-Scripts/Core/
-├── IGravitySource.cs      ✅
-└── IGravityAffected.cs    ✅
-
-Scripts/Gravity/
-├── GravityManager.cs      ✅ (singleton, priority-based selection)
-├── GravityBody.cs         ✅ (linear falloff, editor gizmos)
-└── GravitySolver.cs       ✅ (queries manager, applies to Rigidbody)
-
-Scripts/Player/
-├── InputReader.cs         ✅ (ScriptableObject, loads from Resources)
-├── CharacterMotorSpherical.cs ✅ (movement, jumping, ground check)
-├── PlayerCamera.cs        ✅ (third-person, gravity-aligned)
-└── PlayerInitializer.cs   ✅ (runtime dependency wiring)
+┌─────────────────────────────────────────────────────────────────┐
+│                    START OF MILESTONE                           │
+├─────────────────────────────────────────────────────────────────┤
+│ 1. Create plans/milestone-X.plan.md with full breakdown         │
+│ 2. Update "Current State" section below (1 line per milestone)  │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    EACH SESSION                                 │
+├─────────────────────────────────────────────────────────────────┤
+│ 1. Read plans/milestone-X.plan.md first                         │
+│ 2. Work through phases, check boxes as you go                   │
+│ 3. Update specs/*.spec.md implementation tables if needed       │
+│ 4. Add session log entry to plan file at end                    │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    END OF MILESTONE                             │
+├─────────────────────────────────────────────────────────────────┤
+│ 1. Mark plan file as ✅ COMPLETE                                 │
+│ 2. Add version entry to CHANGELOG.md                            │
+│ 3. Update specs/*.spec.md with final status                     │
+│ 4. Update "Current State" below                                 │
+│ 5. Mark milestone ✅ in design_doc.md §15                        │
+└─────────────────────────────────────────────────────────────────┘
 ```
+
+### Doc Responsibilities
+
+| Document | Updates When |
+|----------|-------------|
+| `plans/milestone-X.plan.md` | Every session (checkboxes, session log) |
+| `specs/*.spec.md` | When implementation status changes |
+| `CHANGELOG.md` | Milestone complete (release notes) |
+| `design_doc.md` | Milestone complete (✅ marker only) |
+| `copilot-instructions.md` | Milestone start/complete (summary) |
 
 ## Workflow
 
