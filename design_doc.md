@@ -466,14 +466,29 @@ Manage gravitational attraction toward celestial bodies.
 
 ---
 
-### Milestone 5: Gate Transition (Styled Loading)
+### Milestone 5: Solar System Lighting
 
-* Gate trigger + VFX + async scene load + exit anchors
-* 
+* **Problem:** Single directional light doesn't work for solar-system scale (planets on far side of sun lit incorrectly)
+* **Solution:** Custom unlit shaders that calculate sun-facing illumination mathematically
+* `SolarSystemLightingManager` - Sets global shader properties (_SunPosition, _SunColor, shadow caster data)
+* `DistantShadowCaster` - Registers planets/moons as shadow-casting bodies
+* `DistantObjectSwitcher` - LOD switch between real-lit (near) and distant-shader (far) versions
+* Shader include `DistantLighting.hlsl` with:
+  - `CalculateSoftTerminator()` - Per-pixel day/night boundary
+  - `CalculatePhaseAngle()` - Overall brightness for small objects
+  - `CalculateShadow()` - Cylindrical shadow from registered casters
+* Shaders: `SH_DistantPlanet`, `SH_DistantObject`, `SH_CometTail`
+* Comet tails always point away from sun
 
 ---
 
-### Milestone 6: Vertical Slice Content + Style Pass
+### Milestone 6: Gate Transition (Styled Loading)
+
+* Gate trigger + VFX + async scene load + exit anchors
+
+---
+
+### Milestone 7: Vertical Slice Content + Style Pass
 
 * 2–3 POIs on planet, 1 on moon/asteroid
 * First real stylized materials + atmosphere + emissive navigation cues
@@ -493,6 +508,7 @@ Manage gravitational attraction toward celestial bodies.
 * Realistic multi-body gravity with smooth transitions
 * First/third person camera with airborne rotation control
 * Jetpack for 6DOF player movement
+* Solar system lighting with correct illumination from any viewpoint
 * Reliable gate transition to a second scene
 * Objective can be completed end-to-end (15–30 minutes)
 * Minimal save state persists key flags

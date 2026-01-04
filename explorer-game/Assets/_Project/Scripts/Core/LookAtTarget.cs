@@ -6,6 +6,7 @@ namespace Explorer.Core
     /// Makes this object's forward direction always point toward a target.
     /// Useful for directional lights that should illuminate from a fixed source toward the player.
     /// </summary>
+    [ExecuteInEditMode]
     public class LookAtTarget : MonoBehaviour
     {
         // === Inspector Fields ===
@@ -32,12 +33,17 @@ namespace Explorer.Core
                 if (player != null)
                 {
                     _target = player.transform;
+                    Debug.Log($"[LookAtTarget] Found player: {_target.name} at {_target.position}");
                 }
                 else
                 {
                     Debug.LogWarning($"[LookAtTarget] No Player found for {name}");
                 }
             }
+            
+            // Force initial rotation
+            UpdateRotation();
+            Debug.Log($"[LookAtTarget] Initial rotation set. Forward: {transform.forward}");
         }
 
         private void Update()
@@ -61,7 +67,10 @@ namespace Explorer.Core
         {
             if (_target == null) return;
 
-            transform.LookAt(_target);
+            // For directional lights: we want light to travel FROM this position TOWARD the target
+            // Directional lights emit along their +Z axis (forward direction)
+            Vector3 directionToTarget = _target.position - transform.position;
+            transform.rotation = Quaternion.LookRotation(directionToTarget.normalized);
         }
 
         // === Public Methods ===

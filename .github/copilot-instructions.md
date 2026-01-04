@@ -193,10 +193,17 @@ public class Example : MonoBehaviour
 - Airborne rotation controls (Q/E)
 - Jetpack 6DOF movement
 
-**Milestone 5: Gate Transition**
+**Milestone 5: Solar System Lighting**
+- Custom unlit shaders for distant objects (correct sun illumination)
+- `SolarSystemLightingManager` for global shader properties
+- Shadow casting between celestial bodies
+- Phase angle rendering for small objects (asteroids, ships)
+- Distance-based LOD switching (real-lit ↔ distant shader)
+
+**Milestone 6: Gate Transition**
 - Stargate-style scene transitions
 
-**Milestone 6: Vertical Slice**
+**Milestone 7: Vertical Slice**
 - POIs, objectives, art pass
 
 ## Session Workflow
