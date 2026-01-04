@@ -5,32 +5,55 @@ using Explorer.Player;
 namespace Explorer.Ship
 {
     /// <summary>
-    /// Simple boarding trigger for ship prototype testing.
-    /// Place on ship - when player enters trigger and presses interact, they board.
-    /// Press Exit (F) while piloting to disembark.
+    /// Boarding zone trigger for ships.
+    /// Detects when player is in range, shows UI prompt, and handles board/disembark.
+    /// Works with PlayerStateController for proper state management.
     /// </summary>
     [RequireComponent(typeof(SphereCollider))]
     public class ShipBoardingTrigger : MonoBehaviour
     {
         // === Inspector Fields ===
         [Header("References")]
-        [SerializeField] private ShipInput _shipInput;
-        [SerializeField] private Transform _exitPoint;
+        [SerializeField, Tooltip("Ship input controller")]
+        private ShipInput _shipInput;
+        
+        [SerializeField, Tooltip("Ship camera to activate when piloting")]
+        private Camera _shipCamera;
+        
+        [SerializeField, Tooltip("Exit point transform (player spawns here on disembark)")]
+        private Transform _exitPoint;
         
         [Header("Settings")]
-        [SerializeField] private float _boardingRadius = 5f;
+        [SerializeField, Tooltip("Radius of boarding trigger zone")]
+        private float _boardingRadius = 5f;
+        
+        [SerializeField, Tooltip("Ground check distance for safe exit")]
+        private float _groundCheckDistance = 10f;
+        
+        [SerializeField, Tooltip("Layers considered as ground for exit")]
+        private LayerMask _groundLayers = ~0;
+        
+        [Header("UI")]
+        [SerializeField, Tooltip("UI prompt to show when in range")]
+        private GameObject _boardingPromptUI;
+        
+        // === Events ===
+        /// <summary>Fired when player enters boarding range.</summary>
+        public event System.Action OnPlayerInRange;
+        
+        /// <summary>Fired when player leaves boarding range.</summary>
+        public event System.Action OnPlayerOutOfRange;
+        
+        // === Public Properties ===
+        public bool IsPlayerInRange => _isPlayerInRange;
+        public bool IsPiloting => _isPiloting;
         
         // === Private Fields ===
         private SphereCollider _trigger;
-        private GameObject _player;
-        private Camera _playerCamera;
-        private Camera _shipCamera;
-        private InputReader _inputReader;
+        private PlayerStateController _playerStateController;
+        private Transform _playerTransform;
         private bool _isPlayerInRange;
         private bool _isPiloting;
-        
-        // === Properties ===
-        public bool IsPiloting => _isPiloting;
         
         // === Unity Lifecycle ===
         private void Awake()
@@ -42,156 +65,234 @@ namespace Explorer.Ship
             
             // Auto-find ShipInput if not assigned
             if (_shipInput == null)
-            {
                 _shipInput = GetComponentInParent<ShipInput>();
-            }
             
-            // Find ship camera
-            var shipCamObj = GameObject.Find("ShipCamera");
-            if (shipCamObj != null)
-            {
-                _shipCamera = shipCamObj.GetComponent<Camera>();
-            }
+            // Validate references
+            if (_shipCamera == null)
+                Debug.LogWarning($"ShipBoardingTrigger on {name}: ShipCamera not assigned!");
         }
         
         private void Start()
         {
             // Ensure ship input starts disabled
-            if (_shipInput != null)
-            {
-                _shipInput.DisableInput();
-            }
+            _shipInput?.DisableInput();
+            
+            // Hide boarding prompt initially
+            if (_boardingPromptUI != null)
+                _boardingPromptUI.SetActive(false);
         }
         
         private void Update()
         {
-            // Check for F key using new Input System
+            // Handle F key input
             if (Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame)
             {
                 if (_isPiloting)
                 {
-                    Disembark();
+                    TryDisembark();
                 }
                 else if (_isPlayerInRange)
                 {
-                    Board();
+                    TryBoard();
                 }
             }
         }
         
         private void OnTriggerEnter(Collider other)
         {
-            if (other.CompareTag("Player"))
-            {
-                _isPlayerInRange = true;
-                _player = other.gameObject;
-                
-                // Cache player camera
-                if (_playerCamera == null)
-                {
-                    _playerCamera = Camera.main;
-                }
-                
-                // Cache input reader
-                if (_inputReader == null)
-                {
-                    _inputReader = Resources.Load<InputReader>("InputReader");
-                }
-                
-                Debug.Log("Press F to board ship");
-            }
+            if (!other.CompareTag("Player")) return;
+            if (_isPiloting) return;
+            
+            _isPlayerInRange = true;
+            _playerTransform = other.transform;
+            
+            // Find PlayerStateController
+            _playerStateController = other.GetComponent<PlayerStateController>();
+            if (_playerStateController == null)
+                _playerStateController = other.GetComponentInParent<PlayerStateController>();
+            
+            // Show UI prompt (use BoardingPrompt singleton or serialized reference)
+            if (_boardingPromptUI != null)
+                _boardingPromptUI.SetActive(true);
+            else
+                Explorer.UI.BoardingPrompt.GetOrCreate().Show("Press [F] to board ship");
+            
+            OnPlayerInRange?.Invoke();
         }
         
         private void OnTriggerExit(Collider other)
         {
-            if (other.CompareTag("Player"))
-            {
-                _isPlayerInRange = false;
-                Debug.Log("Left ship boarding range");
-            }
+            if (!other.CompareTag("Player")) return;
+            
+            _isPlayerInRange = false;
+            
+            // Hide UI prompt
+            if (_boardingPromptUI != null)
+                _boardingPromptUI.SetActive(false);
+            else
+                Explorer.UI.BoardingPrompt.Instance?.Hide();
+            
+            OnPlayerOutOfRange?.Invoke();
         }
         
         // === Boarding Methods ===
-        private void Board()
+        
+        private void TryBoard()
         {
-            if (_player == null || _shipInput == null)
+            if (_playerStateController == null)
+            {
+                Debug.LogError("ShipBoardingTrigger: PlayerStateController not found on player!");
+                FallbackBoard();
                 return;
+            }
+            
+            if (_playerStateController.IsTransitioning)
+            {
+                Debug.Log("Cannot board: player is transitioning");
+                return;
+            }
+            
+            _isPiloting = true;
+            
+            // Hide prompt
+            if (_boardingPromptUI != null)
+                _boardingPromptUI.SetActive(false);
+            else
+                Explorer.UI.BoardingPrompt.Instance?.Hide();
+            
+            // Use state controller for proper transition
+            _playerStateController.BoardShip(transform, _shipCamera, _shipInput);
+            
+            // Subscribe to disembark for cleanup
+            _playerStateController.OnDisembarked += HandleDisembarked;
+        }
+        
+        private void TryDisembark()
+        {
+            if (_playerStateController == null)
+            {
+                FallbackDisembark();
+                return;
+            }
+            
+            if (_playerStateController.IsTransitioning)
+            {
+                Debug.Log("Cannot disembark: player is transitioning");
+                return;
+            }
+            
+            Vector3 exitPos = FindSafeExitPosition();
+            _playerStateController.DisembarkShip(exitPos);
+        }
+        
+        private void HandleDisembarked()
+        {
+            _isPiloting = false;
+            
+            if (_playerStateController != null)
+                _playerStateController.OnDisembarked -= HandleDisembarked;
+        }
+        
+        /// <summary>
+        /// Find a safe position for the player to exit.
+        /// Raycasts down from exit point to find ground.
+        /// </summary>
+        private Vector3 FindSafeExitPosition()
+        {
+            // Start with explicit exit point or default to ship's right side
+            Vector3 baseExitPos = _exitPoint != null
+                ? _exitPoint.position
+                : transform.position + transform.right * 4f + transform.up * 2f;
+            
+            // Raycast down to find ground
+            if (Physics.Raycast(baseExitPos, -transform.up, out RaycastHit hit, _groundCheckDistance, _groundLayers))
+            {
+                // Place player slightly above ground
+                return hit.point + hit.normal * 1f;
+            }
+            
+            // Also try world down if ship is tilted
+            if (Physics.Raycast(baseExitPos, Vector3.down, out hit, _groundCheckDistance, _groundLayers))
+            {
+                return hit.point + hit.normal * 1f;
+            }
+            
+            // No ground found - use base position (player will fall)
+            Debug.LogWarning("ShipBoardingTrigger: No ground found for exit, using default position");
+            return baseExitPos;
+        }
+        
+        // === Fallback Methods (if no PlayerStateController) ===
+        
+        private void FallbackBoard()
+        {
+            Debug.LogWarning("Using fallback boarding (no PlayerStateController)");
             
             _isPiloting = true;
             
             // Disable player
-            _player.SetActive(false);
+            if (_playerTransform != null)
+                _playerTransform.gameObject.SetActive(false);
             
-            // Disable player input, enable ship input
-            if (_inputReader != null)
-            {
-                _inputReader.DisablePlayerInput();
-            }
-            _shipInput.EnableInput();
+            // Enable ship
+            _shipInput?.EnableInput();
             
             // Switch cameras
-            if (_playerCamera != null)
-            {
-                _playerCamera.gameObject.SetActive(false);
-            }
-            if (_shipCamera != null)
-            {
-                _shipCamera.gameObject.SetActive(true);
-            }
+            var mainCam = Camera.main;
+            if (mainCam != null)
+                mainCam.gameObject.SetActive(false);
             
-            Debug.Log("Boarded ship - Press F to exit");
+            if (_shipCamera != null)
+                _shipCamera.gameObject.SetActive(true);
         }
         
-        private void Disembark()
+        private void FallbackDisembark()
         {
-            if (_player == null)
-                return;
+            Debug.LogWarning("Using fallback disembarking (no PlayerStateController)");
             
             _isPiloting = false;
             
-            // Disable ship input
-            _shipInput.DisableInput();
+            // Disable ship
+            _shipInput?.DisableInput();
             
-            // Position player at exit point or beside ship
-            Vector3 exitPos = _exitPoint != null 
-                ? _exitPoint.position 
-                : transform.position + transform.right * 3f + transform.up * 2f;
-            
-            _player.transform.position = exitPos;
-            
-            // Enable player
-            _player.SetActive(true);
-            
-            // Enable player input
-            if (_inputReader != null)
+            // Position and enable player
+            Vector3 exitPos = FindSafeExitPosition();
+            if (_playerTransform != null)
             {
-                _inputReader.EnablePlayerInput();
+                _playerTransform.position = exitPos;
+                _playerTransform.gameObject.SetActive(true);
             }
             
             // Switch cameras
             if (_shipCamera != null)
-            {
                 _shipCamera.gameObject.SetActive(false);
-            }
-            if (_playerCamera != null)
-            {
-                _playerCamera.gameObject.SetActive(true);
-            }
             
-            Debug.Log("Disembarked from ship");
+            var mainCam = Camera.main;
+            if (mainCam != null)
+                mainCam.gameObject.SetActive(true);
         }
         
         // === Gizmos ===
         private void OnDrawGizmosSelected()
         {
+            // Boarding radius
+            Gizmos.color = new Color(0f, 1f, 1f, 0.3f);
+            Gizmos.DrawSphere(transform.position, _boardingRadius);
             Gizmos.color = Color.cyan;
             Gizmos.DrawWireSphere(transform.position, _boardingRadius);
             
-            if (_exitPoint != null)
-            {
-                Gizmos.color = Color.green;
-                Gizmos.DrawSphere(_exitPoint.position, 0.3f);
-            }
+            // Exit point
+            Vector3 exitPos = _exitPoint != null
+                ? _exitPoint.position
+                : transform.position + transform.right * 4f + transform.up * 2f;
+            
+            Gizmos.color = Color.green;
+            Gizmos.DrawSphere(exitPos, 0.3f);
+            Gizmos.DrawLine(transform.position, exitPos);
+            
+            // Ground check ray
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawRay(exitPos, -transform.up * _groundCheckDistance);
         }
     }
 }

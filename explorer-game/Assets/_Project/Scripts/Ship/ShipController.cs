@@ -24,16 +24,16 @@ namespace Explorer.Ship
         
         [Header("Rotation")]
         [SerializeField, Tooltip("Pitch speed (degrees/sec)")]
-        private float _pitchSpeed = 60f;
+        private float _pitchSpeed = 90f;
         
         [SerializeField, Tooltip("Yaw speed (degrees/sec)")]
-        private float _yawSpeed = 45f;
+        private float _yawSpeed = 90f;
         
         [SerializeField, Tooltip("Roll speed (degrees/sec)")]
-        private float _rollSpeed = 90f;
+        private float _rollSpeed = 120f;
         
-        [SerializeField, Tooltip("Rotation smoothing factor")]
-        private float _rotationSmoothSpeed = 10f;
+        [SerializeField, Tooltip("How quickly rotation responds (higher = snappier)")]
+        private float _rotationResponse = 5f;
         
         [Header("Gravity")]
         [SerializeField, Tooltip("Should ship respond to gravity fields?")]
@@ -41,6 +41,17 @@ namespace Explorer.Ship
         
         [SerializeField, Tooltip("Gravity effect multiplier (0 = immune, 1 = full)")]
         private float _gravityMultiplier = 0.5f;
+        
+        [Header("Landing")]
+        [SerializeField, Tooltip("Velocity threshold to be considered 'landed' (not just touching)")]
+        private float _landedVelocityThreshold = 0.5f;
+        
+        // === Events ===
+        /// <summary>Fired when ship lands (grounded and nearly stationary).</summary>
+        public event System.Action OnLanded;
+        
+        /// <summary>Fired when ship takes off (was landed, now moving).</summary>
+        public event System.Action OnTakeoff;
         
         // === Public Properties ===
         /// <summary>Current velocity in world space (m/s)</summary>
@@ -51,6 +62,9 @@ namespace Explorer.Ship
         
         /// <summary>True if ship is touching any collider</summary>
         public bool IsGrounded => _collisionCount > 0;
+        
+        /// <summary>True if ship is grounded and nearly stationary (safe to disembark)</summary>
+        public bool IsLanded => IsGrounded && Speed < _landedVelocityThreshold;
         
         /// <summary>True if brake is currently active</summary>
         public bool IsBraking => _isBraking;
@@ -69,6 +83,9 @@ namespace Explorer.Ship
         
         private Quaternion _targetRotation;
         private int _collisionCount;
+        private bool _hasRotationInput;    // Track if rotation was requested this frame
+        private Vector3 _smoothedRotationInput; // Smoothed rotation for responsive feel
+        private bool _wasLanded;           // Track landed state for events
         
         // === Unity Lifecycle ===
         private void Awake()
@@ -80,18 +97,29 @@ namespace Explorer.Ship
             _targetRotation = transform.rotation;
         }
         
-        private void Update()
-        {
-            // Calculate target rotation from input (smoother in Update)
-            UpdateTargetRotation();
-        }
-        
         private void FixedUpdate()
         {
             ApplyThrust();
             ApplyRotation();
             ApplyBrake();
             ApplyGravity();
+            CheckLandingState();
+        }
+        
+        private void CheckLandingState()
+        {
+            bool isLandedNow = IsLanded;
+            
+            if (isLandedNow && !_wasLanded)
+            {
+                OnLanded?.Invoke();
+            }
+            else if (!isLandedNow && _wasLanded)
+            {
+                OnTakeoff?.Invoke();
+            }
+            
+            _wasLanded = isLandedNow;
         }
         
         private void OnCollisionEnter(Collision collision)
@@ -125,6 +153,8 @@ namespace Explorer.Ship
                 Mathf.Clamp(input.y, -1f, 1f),
                 Mathf.Clamp(input.z, -1f, 1f)
             );
+            // Mark that we have input if any axis is non-trivial
+            _hasRotationInput = _rotationInput.sqrMagnitude > 0.0001f;
         }
         
         /// <summary>
@@ -160,41 +190,11 @@ namespace Explorer.Ship
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
             _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
             
-            // Zero damping for space physics (no air resistance)
-            _rb.linearDamping = 0f;
-            _rb.angularDamping = 0f;
+            // Keep Inspector values for damping (useful for ground friction feel)
+            // _rb.linearDamping and _rb.angularDamping set in Inspector
             
-            // Center of mass at origin for stable rotation
-            _rb.centerOfMass = Vector3.zero;
-        }
-        
-        private void UpdateTargetRotation()
-        {
-            if (_rotationInput.sqrMagnitude < 0.001f) return;
-            
-            float dt = Time.deltaTime;
-            
-            // Build rotation deltas using Quaternion composition
-            // Pitch around local right axis
-            var pitchDelta = Quaternion.AngleAxis(
-                -_rotationInput.x * _pitchSpeed * dt,
-                transform.right
-            );
-            
-            // Yaw around local up axis
-            var yawDelta = Quaternion.AngleAxis(
-                _rotationInput.y * _yawSpeed * dt,
-                transform.up
-            );
-            
-            // Roll around local forward axis
-            var rollDelta = Quaternion.AngleAxis(
-                -_rotationInput.z * _rollSpeed * dt,
-                transform.forward
-            );
-            
-            // Compose rotations: yaw * pitch * roll * current
-            _targetRotation = yawDelta * pitchDelta * rollDelta * _targetRotation;
+            // Use automatic center of mass from collider geometry
+            _rb.automaticCenterOfMass = true;
         }
         
         private void ApplyThrust()
@@ -217,14 +217,31 @@ namespace Explorer.Ship
         
         private void ApplyRotation()
         {
-            // Smoothly interpolate toward target rotation
-            Quaternion smoothedRotation = Quaternion.Slerp(
-                _rb.rotation,
-                _targetRotation,
-                Time.fixedDeltaTime * _rotationSmoothSpeed
+            // Smooth the input for responsive but not jerky movement
+            _smoothedRotationInput = Vector3.Lerp(
+                _smoothedRotationInput,
+                _hasRotationInput ? _rotationInput : Vector3.zero,
+                Time.fixedDeltaTime * _rotationResponse
             );
             
-            _rb.MoveRotation(smoothedRotation);
+            // If effectively zero input, let physics handle it (allows settling when landed)
+            if (_smoothedRotationInput.sqrMagnitude < 0.0001f)
+            {
+                return;
+            }
+            
+            // Calculate desired angular velocity in local space (degrees/sec -> rad/sec)
+            Vector3 desiredAngularVelocity = new Vector3(
+                -_smoothedRotationInput.x * _pitchSpeed,  // Pitch around local X
+                _smoothedRotationInput.y * _yawSpeed,      // Yaw around local Y  
+                -_smoothedRotationInput.z * _rollSpeed     // Roll around local Z
+            ) * Mathf.Deg2Rad;
+            
+            // Convert to world space
+            Vector3 worldAngularVelocity = transform.TransformDirection(desiredAngularVelocity);
+            
+            // Directly set angular velocity for immediate, smooth response
+            _rb.angularVelocity = worldAngularVelocity;
         }
         
         private void ApplyBrake()

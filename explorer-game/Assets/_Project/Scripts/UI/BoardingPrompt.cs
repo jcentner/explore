@@ -1,0 +1,149 @@
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+
+namespace Explorer.UI
+{
+    /// <summary>
+    /// Creates and manages a simple "Press [F] to board" prompt.
+    /// Auto-creates the Canvas and UI elements on Awake.
+    /// </summary>
+    public class BoardingPrompt : MonoBehaviour
+    {
+        // === Inspector Fields ===
+        [Header("Settings")]
+        [SerializeField, Tooltip("Text to display")]
+        private string _promptText = "Press [F] to board";
+        
+        [SerializeField, Tooltip("Fade duration")]
+        private float _fadeDuration = 0.2f;
+        
+        [SerializeField, Tooltip("Vertical offset from bottom of screen")]
+        private float _bottomOffset = 100f;
+        
+        // === Private Fields ===
+        private Canvas _canvas;
+        private CanvasGroup _canvasGroup;
+        private TextMeshProUGUI _text;
+        private float _targetAlpha;
+        
+        // === Singleton ===
+        public static BoardingPrompt Instance { get; private set; }
+        
+        // === Unity Lifecycle ===
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            
+            CreateUI();
+        }
+        
+        private void Update()
+        {
+            // Smooth fade
+            if (!Mathf.Approximately(_canvasGroup.alpha, _targetAlpha))
+            {
+                _canvasGroup.alpha = Mathf.MoveTowards(
+                    _canvasGroup.alpha,
+                    _targetAlpha,
+                    Time.deltaTime / _fadeDuration
+                );
+            }
+        }
+        
+        private void OnDestroy()
+        {
+            if (Instance == this)
+                Instance = null;
+        }
+        
+        // === Public Methods ===
+        
+        /// <summary>Show the boarding prompt.</summary>
+        public void Show(string text = null)
+        {
+            if (text != null)
+                _text.text = text;
+            else
+                _text.text = _promptText;
+            
+            _targetAlpha = 1f;
+        }
+        
+        /// <summary>Hide the boarding prompt.</summary>
+        public void Hide()
+        {
+            _targetAlpha = 0f;
+        }
+        
+        // === Private Methods ===
+        
+        private void CreateUI()
+        {
+            // Create Canvas
+            _canvas = gameObject.AddComponent<Canvas>();
+            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            _canvas.sortingOrder = 100;
+            
+            gameObject.AddComponent<CanvasScaler>();
+            gameObject.AddComponent<GraphicRaycaster>();
+            
+            // Create panel for prompt
+            var panelGO = new GameObject("PromptPanel");
+            panelGO.transform.SetParent(transform);
+            
+            var panelRect = panelGO.AddComponent<RectTransform>();
+            panelRect.anchorMin = new Vector2(0.5f, 0f);
+            panelRect.anchorMax = new Vector2(0.5f, 0f);
+            panelRect.pivot = new Vector2(0.5f, 0f);
+            panelRect.anchoredPosition = new Vector2(0f, _bottomOffset);
+            panelRect.sizeDelta = new Vector2(300f, 50f);
+            
+            _canvasGroup = panelGO.AddComponent<CanvasGroup>();
+            _canvasGroup.alpha = 0f;
+            
+            // Background
+            var bgImage = panelGO.AddComponent<Image>();
+            bgImage.color = new Color(0f, 0f, 0f, 0.7f);
+            
+            // Text
+            var textGO = new GameObject("PromptText");
+            textGO.transform.SetParent(panelGO.transform);
+            
+            var textRect = textGO.AddComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = new Vector2(10f, 5f);
+            textRect.offsetMax = new Vector2(-10f, -5f);
+            
+            _text = textGO.AddComponent<TextMeshProUGUI>();
+            _text.text = _promptText;
+            _text.fontSize = 24f;
+            _text.alignment = TextAlignmentOptions.Center;
+            _text.color = Color.white;
+            
+            _targetAlpha = 0f;
+        }
+        
+        // === Static Creation ===
+        
+        /// <summary>
+        /// Create the boarding prompt if it doesn't exist.
+        /// Call this from any script that needs the prompt.
+        /// </summary>
+        public static BoardingPrompt GetOrCreate()
+        {
+            if (Instance != null)
+                return Instance;
+            
+            var go = new GameObject("BoardingPrompt");
+            return go.AddComponent<BoardingPrompt>();
+        }
+    }
+}

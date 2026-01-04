@@ -1,6 +1,6 @@
 # Milestone 2: Ship Prototype + Planet-to-Space Loop
 
-**Status:** 🔄 In Progress
+**Status:** ✅ COMPLETE (2026-01-04)
 
 ## Overview
 
@@ -21,35 +21,116 @@ Implement ship flight mechanics and the ability to board/disembark, creating the
 - [x] **ShipController.cs** - 6DOF flight physics with GravitySolver integration
 - [x] **Ship action map** - Added to InputSystem_Actions.inputactions (both Settings and Resources versions)
 - [x] **InputReader extended** - Ship input properties, enable/disable methods
-- [x] **ShipInput.cs** - Bridge between InputReader and ShipController
+- [x] **ShipInput.cs** - Bridge between InputReader and ShipController (implements IPilotable)
 - [x] **ShipCamera.cs** - Temporary follow camera for testing
 - [x] **Ship_Prototype configured** - Rigidbody (mass 1000), GravitySolver, ShipController, ShipInput, BoxCollider
 - [x] **InputActionAsset loading fixed** - Uses .json TextAsset approach for Resources loading
 - [x] **Play mode test passed** - Input system loading and controls working
-
-### Key Files Created/Modified
-
-| File | Status | Notes |
-|------|--------|-------|
-| `Scripts/Ship/ShipController.cs` | ✅ New | ~260 lines, ForceMode.Acceleration, Quaternion rotation |
-| `Scripts/Ship/ShipInput.cs` | ✅ New | ~157 lines, bridges InputReader to ShipController |
-| `Scripts/Ship/ShipCamera.cs` | ✅ New | ~100 lines, temp camera with auto-find |
-| `Scripts/Player/InputReader.cs` | ✅ Modified | Ship action map support, EnsureInputActionsLoaded() |
-| `Settings/InputSystem_Actions.inputactions` | ✅ Modified | Ship action map added |
-| `Resources/InputSystem_Actions.inputactions` | ✅ Modified | Ship action map added |
-| `Resources/InputSystem_Actions.json` | ✅ New | JSON copy for Resources.Load<TextAsset> |
-| `Scripts/Ship/Game.Ship.asmdef` | ✅ Modified | Added Game.Player dependency |
-
-### Technical Notes
-
-- **Unity 6 API**: Uses `rb.linearVelocity` (not `velocity`), `rb.linearDamping` (not `drag`)
-- **InputActionAsset quirk**: `.inputactions` files load as InputActionReference via Resources, not InputActionAsset
-- **Solution**: Created `.json` copy that loads as TextAsset, then use `InputActionAsset.FromJson()`
-- **Controls**: WASD (thrust), Ctrl/Shift (vertical), Mouse (pitch/yaw), Q/E (roll), Space (brake), Tab (boost), F (exit)
+- [x] **Rotation rework** - Direct angular velocity control for smoother flight
+- [x] **Landing detection** - IsLanded property, OnLanded/OnTakeoff events
 
 ---
 
-## Phase 1: Ship Controller Foundation (Reference Material)
+## Phase 2: Player State Machine ✅ COMPLETE
+
+### Completed Items
+
+- [x] **PlayerState.cs** - Enum with OnFoot, BoardingShip, InShip, DisembarkingShip states
+- [x] **IPilotable.cs** - Interface for pilotable vehicles (avoids circular assembly refs)
+- [x] **PlayerStateController.cs** - Central state machine with fade transitions
+  - Singleton access via `PlayerStateController.Instance`
+  - Events: OnStateChanged, OnBoarded, OnDisembarked
+  - Fade in/out transitions (0.3s default)
+  - Disables CharacterMotorSpherical when in ship
+  - Hides player visuals when piloting
+
+### Key Files
+
+| File | Status | Notes |
+|------|--------|-------|
+| `Scripts/Player/PlayerState.cs` | ✅ New | Enum definition |
+| `Scripts/Player/IPilotable.cs` | ✅ New | Interface for ships |
+| `Scripts/Player/PlayerStateController.cs` | ✅ New | ~280 lines, state machine + transitions |
+
+---
+
+## Phase 3: Boarding System ✅ COMPLETE
+
+### Completed Items
+
+- [x] **ShipBoardingTrigger.cs** - Refactored to use PlayerStateController
+  - SphereCollider trigger (5m radius)
+  - F key to board/disembark
+  - Finds safe exit position via raycast
+  - Fallback mode if PlayerStateController not found
+- [x] **BoardingPrompt.cs** - UI singleton for "Press [F] to board" prompt
+  - Auto-creates Canvas and UI elements
+  - Fade in/out animation
+  - Used automatically by ShipBoardingTrigger
+
+### Key Files
+
+| File | Status | Notes |
+|------|--------|-------|
+| `Scripts/Ship/ShipBoardingTrigger.cs` | ✅ Rewritten | ~300 lines, full integration |
+| `Scripts/UI/BoardingPrompt.cs` | ✅ New | ~140 lines, auto-create UI |
+| `Scripts/UI/InteractionPromptUI.cs` | ✅ New | Generic prompt component |
+
+---
+
+## Phase 4: Landing & Integration ✅ COMPLETE
+
+### Completed Items
+
+- [x] **ShipController landing detection** - IsLanded property (grounded + slow)
+- [x] **Safe exit positioning** - Raycast down from exit point
+- [x] **Scene setup** - PlayerStateController added to Player with references
+- [x] **Full gameplay loop tested** - Walk → board → fly → land → disembark → walk
+
+### Testing Checklist
+
+- [x] Walk to ship, see "Press [F] to board" prompt
+- [x] Press F to board with fade transition
+- [x] Fly ship with 6DOF controls
+- [x] Land on different surface (Moon_Test visible in scene)
+- [x] Press F to disembark with fade transition
+- [x] Walk on surface
+- [x] Re-board and fly
+
+---
+
+## Milestone 2 Summary ✅ COMPLETE
+
+**Completion Date:** 2026-01-04
+
+### What Was Built
+
+1. **6DOF Ship Flight** - Direct angular velocity control, ForceMode.Acceleration thrust
+2. **Player State Machine** - OnFoot ↔ InShip with fade transitions
+3. **Boarding System** - F key interaction, safe exit positioning
+4. **Landing Detection** - IsLanded property, OnLanded/OnTakeoff events
+5. **UI Prompts** - Auto-creating BoardingPrompt singleton
+
+### Key Technical Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Direct angular velocity | Smoother than accumulated target rotation |
+| IPilotable interface | Avoids circular assembly dependency |
+| Fade transitions | Hides camera pop, feels polished |
+| Auto-creating UI | No manual scene setup required |
+
+### Deferred to Future Milestones
+
+- Auto-stabilization (auto-level ship)
+- Landing gear visuals/animation
+- Ship damage/destruction
+- Multiple ship types
+- Fuel system
+
+---
+
+## Reference Material (Archived)
 
 ### Research Summary
 

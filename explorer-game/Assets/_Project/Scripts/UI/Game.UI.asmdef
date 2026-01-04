@@ -3,7 +3,8 @@
     "rootNamespace": "Explorer.UI",
     "references": [
         "Game.Core",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

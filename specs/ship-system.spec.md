@@ -1,15 +1,17 @@
 # Ship System Specification
 
+**Implementation Status: ✅ Core Complete (Milestone 2)**
+
 ## Purpose
 
 Handle ship flight, boarding/disembarking, and space traversal between celestial bodies.
 
 ## Design Goals
 
-- **Arcade feel** – Responsive, not simulation-heavy
-- **Smooth transitions** – Boarding/exiting feels seamless
-- **Optional stabilization** – Auto-level for casual play, manual for control
-- **Gravity interaction** – Can enable/disable gravity response
+- **Arcade feel** – Responsive, not simulation-heavy ✅
+- **Smooth transitions** – Boarding/exiting feels seamless ✅
+- **Optional stabilization** – Auto-level for casual play, manual for control (deferred)
+- **Gravity interaction** – Can enable/disable gravity response ✅
 
 ## Components
 
@@ -207,13 +209,13 @@ Landed ───(player exits)────────▶ (Ship idle, player OnF
 
 ## Testing Checklist
 
-- [ ] Ship responds to thrust in all directions
-- [ ] Rotation feels responsive but not twitchy
-- [ ] Auto-stabilize levels ship when no input
-- [ ] Can land on planet surface smoothly
-- [ ] Boarding/exiting works seamlessly
-- [ ] Camera transitions between player and ship views
-- [ ] Ship responds to planet gravity when near surface
+- [x] Ship responds to thrust in all directions
+- [x] Rotation feels responsive but not twitchy
+- [ ] Auto-stabilize levels ship when no input (deferred)
+- [x] Can land on planet surface smoothly
+- [x] Boarding/exiting works seamlessly
+- [x] Camera transitions between player and ship views
+- [x] Ship responds to planet gravity when near surface
 
 ## Performance Notes
 
@@ -231,11 +233,20 @@ Landed ───(player exits)────────▶ (Ship idle, player OnF
 
 ```
 Scripts/Ship/
-├── ShipController.cs
-├── ShipBoardingZone.cs
-├── ShipCamera.cs
-├── ShipLandingGear.cs
-└── ShipInputReader.cs (or shared with player)
+├── ShipController.cs       ✅ Implemented (~270 lines)
+├── ShipBoardingTrigger.cs  ✅ Implemented (~300 lines, was ShipBoardingZone)
+├── ShipCamera.cs           ✅ Implemented (~100 lines)
+├── ShipInput.cs            ✅ Implemented (~160 lines, implements IPilotable)
+└── Game.Ship.asmdef        ✅ References: Core, Gravity, Player, UI, InputSystem
+
+Scripts/Player/
+├── PlayerState.cs          ✅ Implemented (enum)
+├── PlayerStateController.cs ✅ Implemented (~280 lines)
+└── IPilotable.cs           ✅ Implemented (interface)
+
+Scripts/UI/
+├── BoardingPrompt.cs       ✅ Implemented (~140 lines)
+└── InteractionPromptUI.cs  ✅ Implemented (~110 lines)
 ```
 
 ## Future Considerations (Not MVP)

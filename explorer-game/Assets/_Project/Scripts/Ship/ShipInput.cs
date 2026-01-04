@@ -6,9 +6,10 @@ namespace Explorer.Ship
     /// <summary>
     /// Bridges InputReader ship actions to ShipController.
     /// Reads input each frame and passes it to the controller.
+    /// Implements IPilotable for PlayerStateController integration.
     /// </summary>
     [RequireComponent(typeof(ShipController))]
-    public class ShipInput : MonoBehaviour
+    public class ShipInput : MonoBehaviour, IPilotable
     {
         // === Inspector Fields ===
         [Header("Input")]

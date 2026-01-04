@@ -438,10 +438,12 @@ Manage gravitational attraction toward celestial bodies.
 
 ---
 
-### Milestone 2: Ship Prototype + Planet-to-Space Loop
+### Milestone 2: Ship Prototype + Planet-to-Space Loop ✅ COMPLETE
 
-* Board/unboard ship
-* Fly to moon/asteroid, land, walk
+* ✅ Board/unboard ship (F key, fade transitions)
+* ✅ Fly to moon/asteroid, land, walk
+* ✅ 6DOF ship flight with physics
+* ✅ Player state machine (OnFoot ↔ InShip)
 
 ---
 

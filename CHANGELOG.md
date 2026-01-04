@@ -10,6 +10,54 @@ _No unreleased changes._
 
 ---
 
+## [0.3.0] - 2026-01-04
+
+### Milestone 2: Ship Prototype + Planet-to-Space Loop ✅
+
+#### Added
+- **Ship Flight System**
+  - `ShipController.cs` - 6DOF physics flight with direct angular velocity control
+  - `ShipInput.cs` - Bridges InputReader to ShipController, implements `IPilotable`
+  - `ShipCamera.cs` - Follow camera with configurable offset and smoothing
+  - Ship action map in InputSystem_Actions (WASD thrust, mouse look, Q/E roll, Space brake, Tab boost)
+
+- **Player State Machine**
+  - `PlayerState.cs` - Enum: OnFoot, BoardingShip, InShip, DisembarkingShip
+  - `PlayerStateController.cs` - Central state controller with fade transitions
+  - `IPilotable.cs` - Interface for pilotable vehicles (avoids circular deps)
+
+- **Boarding System**
+  - `ShipBoardingTrigger.cs` - SphereCollider trigger, F to board/disembark
+  - `BoardingPrompt.cs` - Auto-creating UI singleton for interaction prompts
+  - `InteractionPromptUI.cs` - Generic prompt component with fade animation
+  - Safe exit positioning via ground raycast
+
+- **Landing Detection**
+  - `ShipController.IsLanded` - True when grounded AND velocity < 0.5 m/s
+  - `OnLanded`/`OnTakeoff` events for future UI/audio hooks
+
+- **Physics Materials**
+  - `PM_ShipHull.physicMaterial` - Friction for landed ship stability
+
+#### Technical Notes
+- **Unity 6 Input System**: Must use `Keyboard.current.fKey.wasPressedThisFrame`, not old `Input.GetKeyDown`
+- **InputActionAsset loading**: `.inputactions` files don't load as InputActionAsset via Resources; use `.json` TextAsset + `InputActionAsset.FromJson()`
+- **Assembly dependencies**: Used `IPilotable` interface to avoid circular reference between Game.Player and Game.Ship
+- **Ship rotation**: Direct angular velocity control (`rb.angularVelocity = desired`) is smoother than accumulated target rotation
+
+#### Ship Controls
+| Input | Action |
+|-------|--------|
+| WASD | Thrust (strafe/forward) |
+| Ctrl/Shift | Vertical thrust |
+| Mouse | Pitch/Yaw |
+| Q/E | Roll |
+| Space | Brake |
+| Tab | Boost |
+| F | Board/Disembark |
+
+---
+
 ## [0.2.0] - 2026-01-03
 
 ### Milestone 1: Core Gravity + On-foot Prototype ✅

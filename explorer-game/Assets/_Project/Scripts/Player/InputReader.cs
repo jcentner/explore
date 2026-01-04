@@ -112,6 +112,43 @@ namespace Explorer.Player
         private bool _isPlayerEnabled;
         private bool _isShipEnabled;
 
+        // === Unity Lifecycle ===
+        
+        /// <summary>
+        /// Reset state when ScriptableObject is enabled (entering play mode).
+        /// </summary>
+        private void OnEnable()
+        {
+            // Reset flags - ScriptableObjects persist state between play sessions
+            _isPlayerEnabled = false;
+            _isShipEnabled = false;
+            
+            // Clear cached actions
+            _moveAction = null;
+            _lookAction = null;
+            _jumpAction = null;
+            _sprintAction = null;
+            _interactAction = null;
+            _shipThrustAction = null;
+            _shipVerticalAction = null;
+            _shipLookAction = null;
+            _shipRollAction = null;
+            _shipBrakeAction = null;
+            _shipBoostAction = null;
+            _shipExitAction = null;
+            
+            // Reset input values
+            MoveInput = Vector2.zero;
+            LookInput = Vector2.zero;
+            SprintHeld = false;
+            ShipThrustInput = Vector2.zero;
+            ShipVerticalInput = 0f;
+            ShipLookInput = Vector2.zero;
+            ShipRollInput = 0f;
+            ShipBrakeHeld = false;
+            ShipBoostHeld = false;
+        }
+
         // === Public Methods ===
 
         /// <summary>
