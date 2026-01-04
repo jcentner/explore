@@ -114,6 +114,15 @@ For milestone requirements and roadmap, see `design_doc.md` §15.
 2. `refresh_unity(mode="if_dirty")` — Force refresh
 3. `read_console` — Diagnose underlying issue
 
+## External Links & Asset Store
+
+- **Never fabricate Unity Asset Store URLs** — Asset slugs/IDs cannot be reliably guessed
+- When suggesting external assets, provide **search terms** instead of direct links:
+  - ✅ "Search Unity Asset Store for 'spaceship free 3D'"
+  - ❌ `https://assetstore.unity.com/packages/3d/vehicles/space/spaceship-free-76512`
+- If you must reference a specific asset, explicitly state: "This URL is unverified — please search manually"
+- The Asset Store blocks automated verification, so links cannot be validated
+
 ## Workflow
 
 1. Read `CHANGELOG.md` for current state
