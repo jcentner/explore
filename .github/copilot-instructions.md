@@ -186,6 +186,7 @@ public class Example : MonoBehaviour
 **Milestone 3: Advanced Gravity**
 - Multi-body gravity accumulation (realistic physics)
 - Gravity vector UI indicator
+- Add sun gravity
 
 **Milestone 4: Enhanced Camera & Movement**
 - First/third person camera toggle
