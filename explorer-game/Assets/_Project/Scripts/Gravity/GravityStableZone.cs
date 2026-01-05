@@ -85,6 +85,10 @@ namespace Explorer.Gravity
         }
 
         // === Editor ===
+        // Note: This component is now optional - emergent Lagrange points happen automatically
+        // when accumulated gravity falls below the zero-g threshold in GravitySolver.
+        // Keep this component for visual markers or explicit forced zones if needed.
+        
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {

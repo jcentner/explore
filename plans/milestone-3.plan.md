@@ -277,11 +277,11 @@ _smoothedUp = Vector3.Slerp(_smoothedUp, _targetUp, blendT).normalized;
 - [x] Runtime debug panel to adjust values
 
 #### Task 5.3: Validation Testing
-- [ ] Walk on planet A, gravity pulls down correctly
-- [ ] Fly toward planet B, feel gravity shift smoothly
+- [x] Walk on planet A, gravity pulls down correctly
+- [x] Fly toward planet B, feel gravity shift smoothly
 - [ ] Park ship at Lagrange point, experience near-zero-g
 - [ ] Exit ship at Lagrange point, player floats
-- [ ] UI indicator matches experienced gravity
+- [x] UI indicator matches experienced gravity
 
 **Files Created:**
 - `Assets/_Project/Scripts/Gravity/GravityDebugPanel.cs` ✅

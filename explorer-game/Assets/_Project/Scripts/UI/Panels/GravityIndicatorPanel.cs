@@ -92,7 +92,6 @@ namespace Explorer.UI
 
         // === Private Fields ===
         private IGravityAffected _gravityAffected;
-        private Camera _mainCamera;
         private float _currentRotation;
         private float _currentScale = 1f;
         private bool _wasInZeroG;
@@ -113,7 +112,6 @@ namespace Explorer.UI
 
         private void Start()
         {
-            _mainCamera = Camera.main;
             FindGravityTarget();
 
             // Initialize zero-g container state
@@ -200,10 +198,6 @@ namespace Explorer.UI
                     return;
             }
 
-            // Refresh camera if needed (e.g., scene reload)
-            if (_mainCamera == null)
-                _mainCamera = Camera.main;
-
             UpdateArrowDirection();
             UpdateArrowScale();
             UpdateMagnitudeDisplay();
@@ -225,10 +219,6 @@ namespace Explorer.UI
 
         private void FindGravityTarget()
         {
-            // Refresh camera reference
-            if (_mainCamera == null)
-                _mainCamera = Camera.main;
-            
             if (_target != null)
             {
                 _gravityAffected = _target.GetComponent<IGravityAffected>();
@@ -271,10 +261,37 @@ namespace Explorer.UI
                 _gravityAffected = solver;
             }
         }
+        
+        /// <summary>
+        /// Finds the currently active rendering camera.
+        /// Handles cases where ship camera doesn't have MainCamera tag.
+        /// </summary>
+        private Camera FindActiveCamera()
+        {
+            // First try Camera.main (fast path for tagged cameras)
+            Camera main = Camera.main;
+            if (main != null && main.isActiveAndEnabled)
+                return main;
+            
+            // Fallback: find any active camera
+            // This handles cases like ship camera without MainCamera tag
+            foreach (Camera cam in Camera.allCameras)
+            {
+                if (cam.isActiveAndEnabled && cam.targetTexture == null) // Not a render texture camera
+                    return cam;
+            }
+            
+            return null;
+        }
 
         private void UpdateArrowDirection()
         {
-            if (_arrowTransform == null || _mainCamera == null)
+            if (_arrowTransform == null)
+                return;
+            
+            // Get active camera - refreshes each frame to handle camera switches
+            Camera activeCamera = FindActiveCamera();
+            if (activeCamera == null)
                 return;
 
             Vector3 gravity = _gravityAffected.CurrentGravity;
@@ -290,11 +307,12 @@ namespace Explorer.UI
             Vector3 gravityDirection = gravity.normalized;
 
             // Get the gravity direction in camera space
-            Vector3 gravityCameraSpace = _mainCamera.transform.InverseTransformDirection(gravityDirection);
+            Vector3 gravityCameraSpace = activeCamera.transform.InverseTransformDirection(gravityDirection);
 
             // Calculate angle on screen (in the XY plane of screen space)
-            // Gravity pointing down in world = arrow pointing down on screen
-            float targetAngle = Mathf.Atan2(-gravityCameraSpace.x, -gravityCameraSpace.y) * Mathf.Rad2Deg;
+            // The ▼ character points down (negative Y), so we need to align it with gravity direction
+            // Negate X to fix left/right mirroring, add 180° because arrow points -Y not +Y
+            float targetAngle = Mathf.Atan2(-gravityCameraSpace.x, gravityCameraSpace.y) * Mathf.Rad2Deg + 180f;
 
             // Smooth rotation
             _currentRotation = Mathf.LerpAngle(_currentRotation, targetAngle, _rotationSmoothing * Time.deltaTime);

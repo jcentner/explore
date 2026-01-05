@@ -24,8 +24,8 @@ namespace Explorer.Gravity
         private float _gravityScale = 1f;
 
         [SerializeField]
-        [Tooltip("Gravity magnitude below this threshold is considered zero-g (m/s²).")]
-        private float _zeroGThreshold = 0.1f;
+        [Tooltip("Gravity magnitude below this threshold is clamped to zero (emergent Lagrange points).")]
+        private float _zeroGThreshold = 0.25f;
 
         [Header("Orientation Blending")]
         [SerializeField]
@@ -206,6 +206,13 @@ namespace Explorer.Gravity
 
             // Get accumulated gravity from all sources
             _currentGravity = manager.GetAccumulatedGravity(transform.position) * _gravityScale;
+            
+            // Clamp to zero if below threshold - creates emergent Lagrange points
+            // where gravity sources naturally cancel out
+            if (_currentGravity.magnitude < _zeroGThreshold)
+            {
+                _currentGravity = Vector3.zero;
+            }
 
             // Track previous dominant source before updating
             _previousDominantSource = _dominantSource;

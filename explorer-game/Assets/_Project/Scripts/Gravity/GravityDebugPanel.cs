@@ -134,6 +134,17 @@ namespace Explorer.Gravity
             sb.AppendLine($"Press {_toggleKey} to toggle");
             sb.AppendLine();
 
+            // Position and velocity
+            Vector3 position = _targetSolver.transform.position;
+            var rb = _targetSolver.GetComponent<Rigidbody>();
+            Vector3 velocity = rb != null ? rb.linearVelocity : Vector3.zero;
+            float speed = velocity.magnitude;
+            
+            string targetName = PlayerPilotingService.IsPiloting ? "Ship" : "Player";
+            sb.AppendLine($"<b>{targetName} Position:</b> ({position.x:F0}, {position.y:F0}, {position.z:F0})");
+            sb.AppendLine($"<b>{targetName} Velocity:</b> {speed:F1} m/s");
+            sb.AppendLine();
+
             // Current state
             Vector3 gravity = _targetSolver.CurrentGravity;
             float magnitude = gravity.magnitude;
@@ -157,11 +168,11 @@ namespace Explorer.Gravity
                 sb.AppendLine("<b>Dominant:</b> <color=yellow>None</color>");
             }
 
-            // Contributions breakdown
+            // Contributions breakdown (raw values before zone modifiers)
             if (_showContributions)
             {
                 sb.AppendLine();
-                sb.AppendLine("<b>Contributors:</b>");
+                sb.AppendLine("<b>Contributors (raw):</b>");;
 
                 var contributions = _targetSolver.GravityContributions;
                 if (contributions != null && contributions.Count > 0)
@@ -187,6 +198,11 @@ namespace Explorer.Gravity
             sb.AppendLine("<b>Solver Settings:</b>");
             sb.AppendLine($"  Orientation Speed: {_targetSolver.OrientationBlendSpeed:F0}°/s");
             sb.AppendLine($"  Zero-G Threshold: {_targetSolver.ZeroGThreshold:F2} m/s²");
+            
+            // Manager info
+            sb.AppendLine();
+            sb.AppendLine("<b>Manager:</b>");
+            sb.AppendLine($"  Sources: {_gravityManager.SourceCount}");
 
             _debugText.text = sb.ToString();
         }
