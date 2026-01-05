@@ -461,22 +461,26 @@ Manage gravitational attraction toward celestial bodies.
 
 ### Milestone 3: Advanced Gravity System
 
-* Multi-body gravity accumulation (all sources contribute, weighted by mass/distance²)
-* Lagrange point emergent behavior from realistic gravity math
-* Gravity vector UI indicator (lower-center screen showing combined direction + magnitude)
-* Smooth transitions when gravity balance shifts
+* **Problem:** Single-dominant-source gravity feels artificial at boundaries
+* **Solution:** Multi-body accumulation with smooth transitions
+* `GravityManager.GetAccumulatedGravity()` - Weighted sum from all sources
+* `GravityPreset` ScriptableObject - Designer-tunable falloff curves
+* Smooth orientation blending (no jarring snaps when dominant source changes)
+* Emergent Lagrange-like stable points (zero-g zones)
+* Gravity vector UI indicator (direction + magnitude)
+* Zero-g detection for player float state
 
 ---
 
 ### Milestone 4: Enhanced Camera & Movement Controls
 
 * First-person / third-person camera toggle (V key)
-* Player rotation decoupled from gravity when airborne (Q/E to roll)
+* Airborne roll control (Q/E) - reorient when not grounded
 * Jetpack system (J to toggle):
-  - Vertical thrust: R (up), F (down)
+  - Vertical thrust: Shift (up) / Ctrl (down) - matches ship controls
   - Horizontal thrust: WASD
   - 6DOF movement in zero-g or low-g environments
-* Fuel/energy management (optional, tunable)
+* Fuel system with grounded regeneration
 
 ---
 

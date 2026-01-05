@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Explorer.Gravity;
 
@@ -5,7 +6,7 @@ namespace Explorer.Player
 {
     /// <summary>
     /// Character motor designed for spherical gravity surfaces.
-    /// Handles movement, jumping, and up-alignment on curved terrain.
+    /// Handles movement, jumping, up-alignment, and zero-G floating.
     /// </summary>
     [RequireComponent(typeof(GravitySolver))]
     [RequireComponent(typeof(Rigidbody))]
@@ -58,8 +59,25 @@ namespace Explorer.Player
 
         [Header("Rotation")]
         [SerializeField]
-        [Tooltip("Speed at which player aligns to gravity 'up'.")]
-        private float _upAlignmentSpeed = 10f;
+        [Tooltip("Speed at which player aligns to gravity 'up' (degrees/second). Uses GravitySolver's smoothed LocalUp.")]
+        private float _upAlignmentSpeed = 180f;
+
+        [SerializeField]
+        [Tooltip("Maximum rotation speed for alignment to prevent disorientation (degrees/second).")]
+        private float _maxAlignmentSpeed = 360f;
+
+        [Header("Zero-G")]
+        [SerializeField]
+        [Tooltip("Movement thrust in zero-g (m/s²).")]
+        private float _zeroGThrust = 3f;
+
+        [SerializeField]
+        [Tooltip("Drag applied in zero-g to slow down.")]
+        private float _zeroGDrag = 0.5f;
+
+        [SerializeField]
+        [Tooltip("Rotation speed in zero-g (degrees/second).")]
+        private float _zeroGRotationSpeed = 60f;
 
         [Header("Input")]
         [SerializeField]
@@ -72,6 +90,11 @@ namespace Explorer.Player
         /// Whether the player is currently on the ground.
         /// </summary>
         public bool IsGrounded { get; private set; }
+
+        /// <summary>
+        /// Whether the player is currently in zero-g.
+        /// </summary>
+        public bool IsInZeroG => _gravitySolver != null && _gravitySolver.IsInZeroG;
 
         /// <summary>
         /// Whether the player is currently moving (has velocity).
@@ -93,6 +116,13 @@ namespace Explorer.Player
         /// </summary>
         public Vector3 Velocity => _rb.linearVelocity;
 
+        // === Events ===
+        /// <summary>Fired when entering zero-g state.</summary>
+        public event Action OnZeroGEntered;
+
+        /// <summary>Fired when exiting zero-g state.</summary>
+        public event Action OnZeroGExited;
+
         // === Private Fields ===
         private GravitySolver _gravitySolver;
         private Rigidbody _rb;
@@ -102,6 +132,7 @@ namespace Explorer.Player
         private Vector3 _horizontalVelocity;
         private float _lastJumpTime;
         private bool _jumpRequested;
+        private bool _wasInZeroG;
 
         private Transform _cameraTransform;
 
@@ -128,6 +159,13 @@ namespace Explorer.Player
             {
                 _inputReader.OnJump += HandleJumpInput;
             }
+
+            // Subscribe to gravity solver events
+            if (_gravitySolver != null)
+            {
+                _gravitySolver.OnZeroGEntered += HandleZeroGEntered;
+                _gravitySolver.OnZeroGExited += HandleZeroGExited;
+            }
         }
 
         private void OnDestroy()
@@ -135,6 +173,12 @@ namespace Explorer.Player
             if (_inputReader != null)
             {
                 _inputReader.OnJump -= HandleJumpInput;
+            }
+
+            if (_gravitySolver != null)
+            {
+                _gravitySolver.OnZeroGEntered -= HandleZeroGEntered;
+                _gravitySolver.OnZeroGExited -= HandleZeroGExited;
             }
         }
 
@@ -150,11 +194,19 @@ namespace Explorer.Player
 
         private void FixedUpdate()
         {
-            CheckGrounded();
-            ApplyGravity();
-            HandleMovement();
-            HandleJump();
-            AlignToGravity();
+            if (IsInZeroG)
+            {
+                HandleZeroGMovement();
+                HandleZeroGRotation();
+            }
+            else
+            {
+                CheckGrounded();
+                ApplyGravity();
+                HandleMovement();
+                HandleJump();
+                AlignToGravity();
+            }
         }
 
         // === Public Methods ===
@@ -295,18 +347,128 @@ namespace Explorer.Player
 
         private void AlignToGravity()
         {
-            if (LocalUp == Vector3.zero)
+            Vector3 targetUp = LocalUp;
+            if (targetUp == Vector3.zero || targetUp.sqrMagnitude < 0.001f)
                 return;
 
-            // Calculate target rotation that aligns transform.up with LocalUp
-            Quaternion targetRotation = Quaternion.FromToRotation(transform.up, LocalUp) * transform.rotation;
+            // Calculate angle between current up and target up
+            float angleDiff = Vector3.Angle(transform.up, targetUp);
+            if (angleDiff < 0.01f)
+                return;
 
-            // Smoothly rotate toward target
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation,
-                targetRotation,
-                _upAlignmentSpeed * Time.fixedDeltaTime
-            );
+            // Calculate max rotation this frame (degrees)
+            float maxAngleThisFrame = _upAlignmentSpeed * Time.fixedDeltaTime;
+            if (_maxAlignmentSpeed > 0f)
+            {
+                maxAngleThisFrame = Mathf.Min(maxAngleThisFrame, _maxAlignmentSpeed * Time.fixedDeltaTime);
+            }
+
+            // Calculate blend factor based on angle remaining
+            float blendT = Mathf.Clamp01(maxAngleThisFrame / angleDiff);
+
+            // Handle near-180° flip: choose consistent rotation direction
+            Quaternion targetRotation;
+            if (angleDiff > 170f)
+            {
+                // Find rotation axis perpendicular to both up vectors
+                Vector3 rotationAxis = Vector3.Cross(transform.up, targetUp);
+                if (rotationAxis.sqrMagnitude < 0.001f)
+                {
+                    // Parallel vectors - use forward as rotation axis
+                    rotationAxis = transform.forward;
+                }
+                rotationAxis.Normalize();
+
+                // Create incremental rotation around the axis
+                Quaternion incrementalRotation = Quaternion.AngleAxis(maxAngleThisFrame, rotationAxis);
+                targetRotation = incrementalRotation * transform.rotation;
+            }
+            else
+            {
+                // Normal case: rotate from current up to target up
+                targetRotation = Quaternion.FromToRotation(transform.up, targetUp) * transform.rotation;
+                targetRotation = Quaternion.Slerp(transform.rotation, targetRotation, blendT);
+            }
+
+            transform.rotation = targetRotation;
+        }
+
+        // === Zero-G Methods ===
+
+        private void HandleZeroGEntered()
+        {
+            // Clear horizontal velocity tracking when entering zero-g
+            _horizontalVelocity = Vector3.zero;
+            IsGrounded = false;
+
+            // Apply drag to rigidbody for zero-g
+            _rb.linearDamping = _zeroGDrag;
+
+            OnZeroGEntered?.Invoke();
+        }
+
+        private void HandleZeroGExited()
+        {
+            // Reset drag when exiting zero-g
+            _rb.linearDamping = 0f;
+
+            OnZeroGExited?.Invoke();
+        }
+
+        private void HandleZeroGMovement()
+        {
+            if (_moveInput.sqrMagnitude < 0.01f)
+                return;
+
+            // Get thrust direction relative to camera
+            Vector3 thrustDirection = GetZeroGMoveDirection();
+
+            // Apply thrust as force
+            _rb.AddForce(thrustDirection * _zeroGThrust, ForceMode.Acceleration);
+        }
+
+        private void HandleZeroGRotation()
+        {
+            // In zero-g, player can freely rotate using look input
+            // This is a preview of M4 jetpack behavior
+            if (_cameraTransform == null)
+            {
+                _cameraTransform = Camera.main?.transform;
+                if (_cameraTransform == null)
+                    return;
+            }
+
+            // Slowly align to camera's up direction for stability
+            // (Player will naturally orient to match camera view)
+            Vector3 targetUp = _cameraTransform.up;
+            float angleDiff = Vector3.Angle(transform.up, targetUp);
+
+            if (angleDiff > 1f)
+            {
+                float rotationThisFrame = _zeroGRotationSpeed * Time.fixedDeltaTime;
+                float blendT = Mathf.Clamp01(rotationThisFrame / angleDiff);
+
+                Quaternion targetRotation = Quaternion.FromToRotation(transform.up, targetUp) * transform.rotation;
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, blendT);
+            }
+        }
+
+        private Vector3 GetZeroGMoveDirection()
+        {
+            if (_cameraTransform == null)
+            {
+                _cameraTransform = Camera.main?.transform;
+                if (_cameraTransform == null)
+                    return transform.forward * _moveInput.y + transform.right * _moveInput.x;
+            }
+
+            // In zero-g, use camera directions directly (no projection to plane)
+            Vector3 cameraForward = _cameraTransform.forward;
+            Vector3 cameraRight = _cameraTransform.right;
+
+            // Combine into move direction
+            Vector3 moveDirection = (cameraForward * _moveInput.y + cameraRight * _moveInput.x).normalized;
+            return moveDirection;
         }
 
         // === Editor ===
@@ -318,13 +480,22 @@ namespace Explorer.Player
             if (_capsule == null)
                 return;
 
-            // Draw ground check
+            // Draw ground check (not relevant in zero-g)
             Vector3 localUp = Application.isPlaying ? LocalUp : transform.up;
             Vector3 origin = transform.position + localUp * _capsule.radius;
             float checkDistance = _capsule.radius + _groundCheckDistance;
 
-            Gizmos.color = IsGrounded ? Color.green : Color.red;
-            Gizmos.DrawWireSphere(origin - localUp * checkDistance, _groundCheckRadius);
+            // Color based on state
+            if (Application.isPlaying && IsInZeroG)
+            {
+                Gizmos.color = new Color(1f, 0f, 1f, 0.5f); // Magenta for zero-g
+                Gizmos.DrawWireSphere(transform.position, 1f);
+            }
+            else
+            {
+                Gizmos.color = IsGrounded ? Color.green : Color.red;
+                Gizmos.DrawWireSphere(origin - localUp * checkDistance, _groundCheckRadius);
+            }
         }
 #endif
     }

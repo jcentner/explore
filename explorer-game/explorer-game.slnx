@@ -2,8 +2,8 @@
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Game.Ship.csproj" />
   <Project Path="Game.Player.csproj" />
+  <Project Path="Game.Gravity.csproj" />
   <Project Path="Game.Core.csproj" />
   <Project Path="Game.UI.csproj" />
-  <Project Path="Game.Gravity.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
 </Solution>

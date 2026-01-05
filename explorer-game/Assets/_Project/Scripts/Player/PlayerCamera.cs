@@ -54,8 +54,12 @@ namespace Explorer.Player
         private float _followSmoothing = 10f;
 
         [SerializeField]
-        [Tooltip("How quickly camera aligns up with player's LocalUp.")]
-        private float _upAlignmentSpeed = 5f;
+        [Tooltip("How quickly camera aligns up with player's LocalUp (degrees/second).")]
+        private float _upAlignmentSpeed = 90f;
+
+        [SerializeField]
+        [Tooltip("Maximum rotation speed for up alignment to prevent nausea (degrees/second). 0 = unlimited.")]
+        private float _maxUpRotationSpeed = 180f;
 
         [Header("Input")]
         [SerializeField]
@@ -168,7 +172,7 @@ namespace Explorer.Player
 
         private void UpdateUpDirection()
         {
-            // Get target up direction from player motor
+            // Get target up direction from player motor (already smoothed by GravitySolver)
             Vector3 targetUp = Vector3.up;
             if (_motor != null)
             {
@@ -179,9 +183,43 @@ namespace Explorer.Player
                 targetUp = _target.up;
             }
 
-            // Smoothly align to target up
-            _currentUp = Vector3.Slerp(_currentUp, targetUp, _upAlignmentSpeed * Time.deltaTime);
-            _currentUp.Normalize();
+            // Calculate angle difference
+            float angleDiff = Vector3.Angle(_currentUp, targetUp);
+            if (angleDiff < 0.01f)
+            {
+                _currentUp = targetUp;
+                return;
+            }
+
+            // Calculate max rotation this frame (degrees)
+            float maxAngleThisFrame = _upAlignmentSpeed * Time.deltaTime;
+            if (_maxUpRotationSpeed > 0f)
+            {
+                maxAngleThisFrame = Mathf.Min(maxAngleThisFrame, _maxUpRotationSpeed * Time.deltaTime);
+            }
+
+            // Calculate blend factor
+            float blendT = Mathf.Clamp01(maxAngleThisFrame / angleDiff);
+
+            // Handle near-180° flip with consistent rotation direction
+            if (angleDiff > 170f)
+            {
+                Vector3 rotationAxis = Vector3.Cross(_currentUp, targetUp);
+                if (rotationAxis.sqrMagnitude < 0.001f)
+                {
+                    // Use camera right as fallback rotation axis
+                    rotationAxis = transform.right;
+                }
+                rotationAxis.Normalize();
+
+                Quaternion rotation = Quaternion.AngleAxis(maxAngleThisFrame, rotationAxis);
+                _currentUp = (rotation * _currentUp).normalized;
+            }
+            else
+            {
+                // Normal Slerp for smaller angles
+                _currentUp = Vector3.Slerp(_currentUp, targetUp, blendT).normalized;
+            }
         }
 
         private void UpdateCameraPosition()

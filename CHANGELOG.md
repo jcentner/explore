@@ -17,6 +17,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Five implementation phases with task breakdowns
   - GravityPreset ScriptableObject for designer tuning
 
+### Milestone 4 Planning: Enhanced Camera & Movement Controls
+
+#### Added
+- **Milestone 4 Plan** (`plans/milestone-4.plan.md`)
+  - First-person / third-person camera toggle (V key)
+  - Airborne roll control (Q/E keys)
+  - Full jetpack system with 6DOF movement
+  - Fuel/energy management with regeneration
+  - Six implementation phases with task breakdowns
+  - Input mapping avoiding F key conflict (C for down thrust)
+
 ---
 
 ### Milestone 6 Planning: UI Foundation

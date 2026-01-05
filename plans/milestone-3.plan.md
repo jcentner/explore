@@ -1,6 +1,6 @@
 # Milestone 3: Advanced Gravity System
 
-**Status:** 🔲 Not Started  
+**Status:** � In Progress  
 **Goal:** Evolve from single-dominant-source gravity to multi-body accumulation with emergent Lagrange-like behavior, while maintaining the "learnable physics" pillar.
 
 ## 1. Context & Problem Statement
@@ -110,9 +110,9 @@ Use **AnimationCurve** for falloff, allowing designers to:
 ### Phase 1: Core Gravity Accumulation
 
 #### Task 1.1: Extend IGravitySource
-- [ ] Add `float Mass { get; }` property (for realistic calculations)
-- [ ] Add `AnimationCurve FalloffCurve { get; }` for custom falloff
-- [ ] Add `GravityMode Mode { get; }` enum (Dominant, Accumulate, Both)
+- [x] Add `float Mass { get; }` property (for realistic calculations)
+- [x] Add `float SurfaceRadius { get; }` for inverse-square calculations
+- [x] Add `GravityMode Mode { get; }` enum (Dominant, Accumulate, Both)
 
 ```csharp
 public enum GravityMode
@@ -124,58 +124,78 @@ public enum GravityMode
 ```
 
 #### Task 1.2: Update GravityBody
-- [ ] Add `[SerializeField] float _mass` with reasonable defaults
-- [ ] Add `[SerializeField] AnimationCurve _falloffCurve` with preset options
-- [ ] Add `[SerializeField] GravityMode _mode = GravityMode.Both`
-- [ ] Implement new `CalculateGravityContribution(Vector3 pos)` method
+- [x] Add `Mass` property auto-derived from `BaseStrength × SurfaceRadius²`
+- [x] Add `[SerializeField] GravityMode _mode = GravityMode.Both`
+- [x] Implement inverse-square `CalculateGravity()`: `g = g₀ × (r₀² / r²)`
+- [x] Clamp gravity at surface to prevent infinite values
 
 #### Task 1.3: Update GravityManager
-- [ ] Add `GetAccumulatedGravity(Vector3 position)` method
-- [ ] Add `GetDominantSource(Vector3 position)` (keep for orientation)
-- [ ] Add `GetAllContributors(Vector3 position)` for debugging/UI
-- [ ] Optimize: cache results when position hasn't moved significantly
+- [x] Add `GetAccumulatedGravity(Vector3 position)` method
+- [x] Refactor `GetDominantSource(Vector3 position)` to use magnitude (not distance)
+- [x] Add `GetAllContributors(Vector3 position)` returning `List<GravityContribution>`
+- [x] Add `GravityContribution` struct for source/direction/magnitude/influence data
 
 #### Task 1.4: Update GravitySolver
-- [ ] Change from single-source to accumulated gravity
-- [ ] Keep `DominantSource` property for orientation consumers
-- [ ] Add `GravityContributions` list for UI/debugging
-- [ ] Add smooth interpolation when dominant source changes
+- [x] Change from single-source to accumulated gravity via `GetAccumulatedGravity()`
+- [x] Keep `DominantSource` property for orientation consumers
+- [x] Add `GravityContributions` list for UI/debugging
+- [x] Add `IsInZeroG` property with configurable `_zeroGThreshold`
+
+#### Task 1.5: Create GravityPreset ScriptableObject
+- [x] Create `GravityPreset.cs` with tunable parameters
+- [x] Include presets: Earth-like, Moon-like, Asteroid
+- [x] Add `OrientationBlendSpeed` for Phase 2 use
+
+#### Task 1.6: Update Gizmo Visualizations
+- [x] `GravityBody`: Draw inverse-square falloff contours (50%, 25%, 10%)
+- [x] `GravitySolver`: Draw individual contributions when multiple sources
 
 **Files Modified:**
-- `Assets/_Project/Scripts/Core/IGravitySource.cs`
-- `Assets/_Project/Scripts/Gravity/GravityBody.cs`
-- `Assets/_Project/Scripts/Gravity/GravityManager.cs`
-- `Assets/_Project/Scripts/Gravity/GravitySolver.cs`
+- `Assets/_Project/Scripts/Core/IGravitySource.cs` ✅
+- `Assets/_Project/Scripts/Gravity/GravityBody.cs` ✅
+- `Assets/_Project/Scripts/Gravity/GravityManager.cs` ✅
+- `Assets/_Project/Scripts/Gravity/GravitySolver.cs` ✅
+
+**Files Created:**
+- `Assets/_Project/Scripts/Gravity/GravityPreset.cs` ✅
 
 ---
 
 ### Phase 2: Smooth Transitions
 
 #### Task 2.1: Orientation Blending
-- [ ] Create `OrientationSolver` component (or extend GravitySolver)
-- [ ] Smoothly interpolate "up" direction over configurable duration
-- [ ] Prevent jarring camera/player flips
+- [x] Extend GravitySolver with smoothed orientation
+- [x] Add `_smoothedUp` and `_targetUp` private fields
+- [x] Add `_orientationBlendSpeed` (degrees/second) with default 90°/s
+- [x] Add `_maxRotationSpeed` limit to prevent nausea (default 180°/s)
+- [x] Implement `UpdateSmoothedOrientation()` with proper 180° flip handling
+- [x] Add `RawLocalUp` property for unsmoothed direction
+- [x] `LocalUp` now returns smoothed direction
 
 ```csharp
-// Instead of instant snap:
-_currentUp = newUp;
-
-// Smooth blend:
-_targetUp = newUp;
-_currentUp = Vector3.Slerp(_currentUp, _targetUp, _blendSpeed * Time.deltaTime);
+// Smooth blend with max rotation rate limiting:
+float maxAngleThisFrame = _orientationBlendSpeed * Time.fixedDeltaTime;
+if (_maxRotationSpeed > 0f)
+    maxAngleThisFrame = Mathf.Min(maxAngleThisFrame, _maxRotationSpeed * Time.fixedDeltaTime);
+float blendT = Mathf.Clamp01(maxAngleThisFrame / angleDiff);
+_smoothedUp = Vector3.Slerp(_smoothedUp, _targetUp, blendT).normalized;
 ```
 
 #### Task 2.2: Update CharacterMotorSpherical
-- [ ] Consume smoothed orientation from GravitySolver
-- [ ] Add configurable blend speed
-- [ ] Handle edge case: 180° flip (choose rotation direction)
+- [x] Consume smoothed orientation from GravitySolver.LocalUp
+- [x] Change `_upAlignmentSpeed` to degrees/second (default 180°/s)
+- [x] Add `_maxAlignmentSpeed` limit (default 360°/s)
+- [x] Handle 180° flip with consistent rotation axis selection
 
 #### Task 2.3: Update PlayerCamera
-- [ ] Smooth camera "up" alignment
-- [ ] Prevent nausea-inducing rapid rotations
-- [ ] Add maximum rotation speed limit
+- [x] Change `_upAlignmentSpeed` to degrees/second (default 90°/s)
+- [x] Add `_maxUpRotationSpeed` limit (default 180°/s)
+- [x] Handle 180° flip using camera's right axis as fallback
 
 **Files Modified:**
+- `Assets/_Project/Scripts/Gravity/GravitySolver.cs` ✅
+- `Assets/_Project/Scripts/Player/CharacterMotorSpherical.cs` ✅
+- `Assets/_Project/Scripts/Player/PlayerCamera.cs` ✅
 - `Assets/_Project/Scripts/Gravity/GravitySolver.cs`
 - `Assets/_Project/Scripts/Player/CharacterMotorSpherical.cs`
 - `Assets/_Project/Scripts/Player/PlayerCamera.cs`
@@ -185,50 +205,61 @@ _currentUp = Vector3.Slerp(_currentUp, _targetUp, _blendSpeed * Time.deltaTime);
 ### Phase 3: Lagrange Point Behavior
 
 #### Task 3.1: Define Stable Zones
-- [ ] Create `GravityStableZone` component for explicit Lagrange-like points
-- [ ] Or: Let them emerge from balanced accumulation (test both)
-- [ ] Add gizmo visualization in editor
+- [x] Create `GravityStableZone` component for explicit Lagrange-like points
+- [x] Support optional forced zero-gravity with smooth blend
+- [x] Add gizmo visualization (sphere, concentric rings, gravity field lines)
 
 #### Task 3.2: Zero-G Detection
-- [ ] Add `IsInZeroG` property to GravitySolver
-- [ ] Threshold: `totalGravity.magnitude < zeroGThreshold`
-- [ ] Trigger state change in player (float mode)
+- [x] `IsInZeroG` property already exists from Phase 1
+- [x] Add `OnZeroGEntered` and `OnZeroGExited` events to GravitySolver
+- [x] Add `OnDominantSourceChanged` event for tracking source transitions
+- [x] Track `_wasInZeroG` state for edge detection
 
 #### Task 3.3: Player Zero-G Behavior
-- [ ] When in zero-g, disable ground snapping
-- [ ] Allow free rotation (preview of M4 jetpack)
-- [ ] Visual feedback (different idle animation, particles?)
+- [x] Add zero-g movement parameters: `_zeroGThrust`, `_zeroGDrag`, `_zeroGRotationSpeed`
+- [x] Separate `FixedUpdate` paths for normal vs zero-g mode
+- [x] `HandleZeroGMovement()`: thrust-based movement relative to camera
+- [x] `HandleZeroGRotation()`: slow alignment to camera up for stability
+- [x] Apply rigidbody drag in zero-g for natural slowdown
+- [x] Clear grounded state, reset horizontal velocity on zero-g entry
+- [x] Fire `OnZeroGEntered`/`OnZeroGExited` events from CharacterMotor
+- [x] Magenta gizmo sphere when in zero-g state
 
 **Files Created:**
-- `Assets/_Project/Scripts/Gravity/GravityStableZone.cs` (optional)
+- `Assets/_Project/Scripts/Gravity/GravityStableZone.cs` ✅
 
 **Files Modified:**
-- `Assets/_Project/Scripts/Gravity/GravitySolver.cs`
-- `Assets/_Project/Scripts/Player/CharacterMotorSpherical.cs`
+- `Assets/_Project/Scripts/Gravity/GravitySolver.cs` ✅
+- `Assets/_Project/Scripts/Player/CharacterMotorSpherical.cs` ✅
 
 ---
 
 ### Phase 4: Gravity UI Indicator
 
 #### Task 4.1: Create Gravity Indicator Panel
-- [ ] Create `GravityIndicatorPanel` extending UIPanel (from M6) or standalone
-- [ ] Position: lower-center screen
-- [ ] Show arrow pointing in gravity direction
-- [ ] Arrow size/color indicates magnitude
+- [x] Create `GravityIndicatorPanel` extending UIPanel (from M6) or standalone
+- [x] Position: lower-center screen
+- [x] Show arrow pointing in gravity direction
+- [x] Arrow size/color indicates magnitude
 
 #### Task 4.2: Multi-Source Visualization
-- [ ] Option A: Single arrow (combined gravity)
+- [x] Option A: Single arrow (combined gravity) ← Implemented
 - [ ] Option B: Multiple arrows (one per significant source)
 - [ ] Option C: Both (combined + breakdown on hover/toggle)
 
 #### Task 4.3: Zero-G State Display
-- [ ] Special indicator when in zero-g zone
-- [ ] Pulse or animate to draw attention
-- [ ] Text label: "Zero-G" or similar
+- [x] Special indicator when in zero-g zone
+- [x] Pulse or animate to draw attention
+- [x] Text label: "ZERO-G" indicator
 
 **Files Created:**
-- `Assets/_Project/Scripts/UI/Panels/GravityIndicatorPanel.cs`
-- `Assets/_Project/Prefabs/UI/P_GravityIndicator.prefab`
+- `Assets/_Project/Scripts/UI/Panels/GravityIndicatorPanel.cs` ✅
+
+**Scene Setup:**
+- `UI_Canvas` with Canvas, CanvasScaler (1920x1080 reference), GraphicRaycaster
+- `GravityIndicator` panel at bottom-center with GravityIndicatorPanel component
+- `GravityArrow` child with Image (auto-found by script)
+- `ZeroGContainer` child with TextMeshProUGUI (hidden by default, shown in zero-g)
 
 ---
 
@@ -313,20 +344,20 @@ public class GravityPreset : ScriptableObject
 ## 7. File Checklist
 
 ### Scripts to Modify
-- [ ] `Assets/_Project/Scripts/Core/IGravitySource.cs`
-- [ ] `Assets/_Project/Scripts/Gravity/GravityBody.cs`
-- [ ] `Assets/_Project/Scripts/Gravity/GravityManager.cs`
-- [ ] `Assets/_Project/Scripts/Gravity/GravitySolver.cs`
-- [ ] `Assets/_Project/Scripts/Player/CharacterMotorSpherical.cs`
-- [ ] `Assets/_Project/Scripts/Player/PlayerCamera.cs`
+- [x] `Assets/_Project/Scripts/Core/IGravitySource.cs`
+- [x] `Assets/_Project/Scripts/Gravity/GravityBody.cs`
+- [x] `Assets/_Project/Scripts/Gravity/GravityManager.cs`
+- [x] `Assets/_Project/Scripts/Gravity/GravitySolver.cs`
+- [x] `Assets/_Project/Scripts/Player/CharacterMotorSpherical.cs`
+- [x] `Assets/_Project/Scripts/Player/PlayerCamera.cs`
 
 ### Scripts to Create
-- [ ] `Assets/_Project/Scripts/Gravity/GravityPreset.cs`
-- [ ] `Assets/_Project/Scripts/UI/Panels/GravityIndicatorPanel.cs`
-- [ ] `Assets/_Project/Scripts/Gravity/GravityStableZone.cs` (optional)
+- [x] `Assets/_Project/Scripts/Gravity/GravityPreset.cs`
+- [x] `Assets/_Project/Scripts/UI/Panels/GravityIndicatorPanel.cs`
+- [x] `Assets/_Project/Scripts/Gravity/GravityStableZone.cs`
 
 ### Prefabs to Create
-- [ ] `Assets/_Project/Prefabs/UI/P_GravityIndicator.prefab`
+- [ ] `Assets/_Project/Prefabs/UI/P_GravityIndicator.prefab` (optional, scene objects work)
 
 ### Scenes
 - [ ] `Assets/_Project/Scenes/GravityTestScene.unity` (new test scene)
@@ -373,3 +404,79 @@ public class GravityPreset : ScriptableObject
 | Tidal forces | Visual only, not gameplay-affecting |
 | Gravity anomalies | Special zones with unusual gravity (post-M3) |
 | Gravity gun/manipulation | Player tool for puzzles (much later) |
+
+---
+
+## 11. Session Log
+
+### 2026-01-04 Session 1 (Phase 1 Complete)
+**Completed:**
+- Extended `IGravitySource` with `Mass`, `SurfaceRadius`, `Mode` properties and `GravityMode` enum
+- Implemented inverse-square gravity in `GravityBody`: `g = g₀ × (r₀² / r²)`
+- Added multi-body accumulation in `GravityManager` with `GetAccumulatedGravity()` and `GetAllContributors()`
+- Updated `GravitySolver` to use accumulated gravity, added `IsInZeroG` and `GravityContributions`
+- Created `GravityPreset` ScriptableObject with Earth-like, Moon-like, Asteroid factory methods
+- Enhanced gizmos: inverse-square contours (50%, 25%, 10%) on `GravityBody`, multi-source visualization on `GravitySolver`
+
+**Decision:** Used Option A (inverse-square) as requested. Mass auto-derived from `BaseStrength × SurfaceRadius²`.
+
+**Next:** Phase 2 - Smooth orientation transitions
+
+### 2026-01-04 Session 2 (Phase 2 Complete)
+**Completed:**
+- Added orientation blending to `GravitySolver`:
+  - `_smoothedUp` tracks interpolated up direction
+  - `_orientationBlendSpeed` (90°/s default) and `_maxRotationSpeed` (180°/s default)
+  - 180° flip handling with consistent rotation axis
+  - `RawLocalUp` vs `LocalUp` (smoothed) distinction
+- Updated `CharacterMotorSpherical`:
+  - Changed to degrees/second units (180°/s default)
+  - Added `_maxAlignmentSpeed` (360°/s)
+  - Proper 180° flip handling using forward as fallback axis
+- Updated `PlayerCamera`:
+  - Changed to degrees/second units (90°/s default)
+  - Added `_maxUpRotationSpeed` (180°/s)
+  - 180° flip handling using right axis as fallback
+
+**Next:** Phase 3 - Lagrange point behavior (zero-G detection already in place from Phase 1)
+
+### 2026-01-04 Session 3 (Phase 3 Complete)
+**Completed:**
+- Created `GravityStableZone` component:
+  - Marks explicit Lagrange-like stable points
+  - Optional `ForceZeroGravity` with smooth blend to center
+  - Rich gizmo visualization (sphere, blend rings, gravity field lines)
+- Added events to `GravitySolver`:
+  - `OnZeroGEntered` / `OnZeroGExited` for state transitions
+  - `OnDominantSourceChanged` for tracking source changes
+  - Proper edge detection with `_wasInZeroG` tracking
+- Implemented player zero-G behavior in `CharacterMotorSpherical`:
+  - New inspector fields: `_zeroGThrust` (3 m/s²), `_zeroGDrag` (0.5), `_zeroGRotationSpeed` (60°/s)
+  - Separate FixedUpdate path for zero-g mode
+  - Thrust-based movement relative to camera direction
+  - Slow rotation alignment to camera up for stability
+  - Rigidbody drag for natural slowdown
+
+**Next:** Phase 4 - Gravity UI indicator
+
+### 2026-01-04 Session 4 (Phase 4 Complete)
+**Completed:**
+- Created `GravityIndicatorPanel` script in `UI/Panels/`:
+  - Arrow rotation based on camera-space gravity projection
+  - Scale interpolation: min 0.3× at zero-g, max 1× at full gravity (15 m/s² reference)
+  - Color interpolation: magenta (zero-g) → yellow (low-g) → white (normal)
+  - Zero-G pulsing text indicator with configurable speed
+  - Auto-finds player via `Tags.PLAYER`, auto-finds child references by name
+- Set up UI hierarchy in TestGravity scene:
+  - `UI_Canvas` with Canvas (Screen Space Overlay), CanvasScaler (1920×1080), GraphicRaycaster
+  - `GravityIndicator` panel at bottom-center (anchor 0.5,0, position 0,60)
+  - `GravityArrow` child with Image component (80×80)
+  - `ZeroGContainer` child with `ZeroGText` (TextMeshProUGUI, "ZERO-G")
+
+**Note:** Unity MCP doesn't support setting object references directly. Script uses `AutoFindChildReferences()` to locate children by name automatically.
+
+**Next:** Phase 5 - Testing & tuning scene
+  - Player events `OnZeroGEntered`/`OnZeroGExited`
+  - Magenta gizmo sphere indicator when floating
+
+**Next:** Phase 4 - Gravity UI indicator
