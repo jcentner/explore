@@ -266,15 +266,15 @@ _smoothedUp = Vector3.Slerp(_smoothedUp, _targetUp, blendT).normalized;
 ### Phase 5: Testing & Tuning Scene
 
 #### Task 5.1: Create Gravity Test Scene
-- [ ] Multiple planets at varying distances
-- [ ] Clear Lagrange point region between two bodies
-- [ ] Zero-g zone for testing float behavior
-- [ ] Debug visualization toggles
+- [x] Multiple planets at varying distances
+- [x] Clear Lagrange point region between two bodies
+- [x] Zero-g zone for testing float behavior
+- [x] Debug visualization toggles
 
 #### Task 5.2: Tuning Parameters
-- [ ] Expose all gravity curves in inspector
-- [ ] Create ScriptableObject presets (Earth-like, Low-G, Micro-G)
-- [ ] Runtime debug panel to adjust values
+- [x] Expose all gravity curves in inspector
+- [x] Create ScriptableObject presets (Earth-like, Low-G, Micro-G)
+- [x] Runtime debug panel to adjust values
 
 #### Task 5.3: Validation Testing
 - [ ] Walk on planet A, gravity pulls down correctly
@@ -282,6 +282,17 @@ _smoothedUp = Vector3.Slerp(_smoothedUp, _targetUp, blendT).normalized;
 - [ ] Park ship at Lagrange point, experience near-zero-g
 - [ ] Exit ship at Lagrange point, player floats
 - [ ] UI indicator matches experienced gravity
+
+**Files Created:**
+- `Assets/_Project/Scripts/Gravity/GravityDebugPanel.cs` ✅
+- `Assets/_Project/Materials/M_Planet_B.mat` ✅
+
+**Scene Setup (TestGravity):**
+- `Planet_Test` at (2000, 0, 0) - scale 500, gravity 15 m/s²
+- `Planet_B` at (2600, 0, 0) - scale 400, gravity 12 m/s² (blue)
+- `LagrangePoint_L1` at (2300, 0, 0) - GravityStableZone with 50m forced zero-g
+- `Moon_Test` at (2399, 381, 0) - smaller orbiting body
+- `GravityDebugPanel` - press F3 to toggle debug info
 
 ---
 

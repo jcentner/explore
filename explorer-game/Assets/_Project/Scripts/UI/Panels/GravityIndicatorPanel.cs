@@ -1,8 +1,8 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Explorer.Core;
+using Explorer.Gravity;
 
 namespace Explorer.UI
 {
@@ -20,11 +20,15 @@ namespace Explorer.UI
 
         [Header("Arrow Display")]
         [SerializeField]
-        [Tooltip("The arrow image that rotates to show gravity direction.")]
+        [Tooltip("The arrow transform that rotates to show gravity direction.")]
         private RectTransform _arrowTransform;
 
         [SerializeField]
-        [Tooltip("Arrow image component for color changes.")]
+        [Tooltip("Arrow text component (uses ▼ character). Preferred over Image.")]
+        private TextMeshProUGUI _arrowText;
+
+        [SerializeField]
+        [Tooltip("Arrow image component for color changes (fallback if no text).")]
         private Image _arrowImage;
 
         [SerializeField]
@@ -47,6 +51,10 @@ namespace Explorer.UI
         [SerializeField]
         [Tooltip("Text label for zero-g state.")]
         private TextMeshProUGUI _zeroGText;
+
+        [SerializeField]
+        [Tooltip("Text showing gravity magnitude (optional).")]
+        private TextMeshProUGUI _magnitudeText;
 
         [SerializeField]
         [Tooltip("Pulse speed for zero-g indicator.")]
@@ -89,6 +97,11 @@ namespace Explorer.UI
         private float _currentScale = 1f;
         private bool _wasInZeroG;
         private CanvasGroup _canvasGroup;
+        private bool _useTextArrow; // True if using TextMeshProUGUI, false if using Image
+        private Transform _playerTransform;
+        private Transform _lastPlayerParent;
+        private float _recheckInterval = 0.5f;
+        private float _recheckTimer;
 
         // === Unity Lifecycle ===
         private void Awake()
@@ -117,16 +130,31 @@ namespace Explorer.UI
         /// </summary>
         private void AutoFindChildReferences()
         {
-            // Find arrow transform and image
+            // Find arrow transform and text/image
             if (_arrowTransform == null)
             {
                 Transform arrowChild = transform.Find("GravityArrow");
                 if (arrowChild != null)
                 {
                     _arrowTransform = arrowChild as RectTransform;
+                    
+                    // Prefer TextMeshProUGUI over Image
+                    if (_arrowText == null)
+                        _arrowText = arrowChild.GetComponent<TextMeshProUGUI>();
                     if (_arrowImage == null)
                         _arrowImage = arrowChild.GetComponent<Image>();
                 }
+            }
+            
+            // Determine which arrow type to use
+            _useTextArrow = _arrowText != null;
+            
+            // If using text, ensure it has an arrow character
+            if (_useTextArrow && string.IsNullOrEmpty(_arrowText.text))
+            {
+                _arrowText.text = "▼";
+                _arrowText.fontSize = 72;
+                _arrowText.alignment = TextAlignmentOptions.Center;
             }
 
             // Find zero-g container
@@ -146,19 +174,46 @@ namespace Explorer.UI
                     }
                 }
             }
+            
+            // Find magnitude text
+            if (_magnitudeText == null)
+            {
+                Transform magChild = transform.Find("MagnitudeText");
+                if (magChild != null)
+                    _magnitudeText = magChild.GetComponent<TextMeshProUGUI>();
+            }
         }
 
         private void Update()
         {
+            // Check if player's parent changed (boarded/exited ship)
+            if (_playerTransform != null && _playerTransform.parent != _lastPlayerParent)
+            {
+                _lastPlayerParent = _playerTransform.parent;
+                _target = null;
+                _gravityAffected = null;
+            }
+            
+            // Periodic re-check if no target
             if (_gravityAffected == null)
             {
-                FindGravityTarget();
+                _recheckTimer -= Time.deltaTime;
+                if (_recheckTimer <= 0f)
+                {
+                    _recheckTimer = _recheckInterval;
+                    FindGravityTarget();
+                }
                 if (_gravityAffected == null)
                     return;
             }
 
+            // Refresh camera if needed (e.g., scene reload)
+            if (_mainCamera == null)
+                _mainCamera = Camera.main;
+
             UpdateArrowDirection();
             UpdateArrowScale();
+            UpdateMagnitudeDisplay();
             UpdateZeroGDisplay();
         }
 
@@ -177,6 +232,10 @@ namespace Explorer.UI
 
         private void FindGravityTarget()
         {
+            // Refresh camera reference
+            if (_mainCamera == null)
+                _mainCamera = Camera.main;
+            
             if (_target != null)
             {
                 _gravityAffected = _target.GetComponent<IGravityAffected>();
@@ -184,12 +243,43 @@ namespace Explorer.UI
                     return;
             }
 
-            // Try to find player by tag
+            // Try to find player by tag first
             var player = GameObject.FindGameObjectWithTag(Tags.PLAYER);
             if (player != null)
             {
-                _target = player.transform;
-                _gravityAffected = player.GetComponent<IGravityAffected>();
+                _playerTransform = player.transform;
+                _lastPlayerParent = _playerTransform.parent;
+                
+                // Player might be in a ship - check parent hierarchy for IGravityAffected first
+                Transform current = player.transform.parent;
+                while (current != null)
+                {
+                    var parentGravity = current.GetComponent<IGravityAffected>();
+                    if (parentGravity != null)
+                    {
+                        _target = current;
+                        _gravityAffected = parentGravity;
+                        return;
+                    }
+                    current = current.parent;
+                }
+                
+                // No parent with gravity - check player itself
+                var playerGravity = player.GetComponent<IGravityAffected>();
+                if (playerGravity != null)
+                {
+                    _target = player.transform;
+                    _gravityAffected = playerGravity;
+                    return;
+                }
+            }
+            
+            // Fallback: find any GravitySolver in scene
+            var solver = FindFirstObjectByType<Explorer.Gravity.GravitySolver>();
+            if (solver != null)
+            {
+                _target = solver.transform;
+                _gravityAffected = solver;
             }
         }
 
@@ -226,7 +316,11 @@ namespace Explorer.UI
 
         private void UpdateArrowScale()
         {
-            if (_arrowTransform == null || _arrowImage == null)
+            if (_arrowTransform == null)
+                return;
+            
+            // Need either text or image for color
+            if (!_useTextArrow && _arrowImage == null)
                 return;
 
             Vector3 gravity = _gravityAffected.CurrentGravity;
@@ -253,7 +347,20 @@ namespace Explorer.UI
                 targetColor = Color.Lerp(_lowGravityColor, _normalGravityColor, t);
             }
 
-            _arrowImage.color = targetColor;
+            // Apply color to appropriate component
+            if (_useTextArrow)
+                _arrowText.color = targetColor;
+            else
+                _arrowImage.color = targetColor;
+        }
+
+        private void UpdateMagnitudeDisplay()
+        {
+            if (_magnitudeText == null)
+                return;
+                
+            float magnitude = _gravityAffected.CurrentGravity.magnitude;
+            _magnitudeText.text = $"{magnitude:F1} m/s²";
         }
 
         private void UpdateZeroGDisplay()

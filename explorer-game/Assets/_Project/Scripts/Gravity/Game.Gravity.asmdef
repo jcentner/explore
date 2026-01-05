@@ -2,7 +2,9 @@
     "name": "Game.Gravity",
     "rootNamespace": "Explorer.Gravity",
     "references": [
-        "Game.Core"
+        "Game.Core",
+        "Unity.TextMeshPro",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

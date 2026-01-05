@@ -3,6 +3,7 @@
     "rootNamespace": "Explorer.UI",
     "references": [
         "Game.Core",
+        "Game.Gravity",
         "Unity.InputSystem",
         "Unity.TextMeshPro"
     ],
