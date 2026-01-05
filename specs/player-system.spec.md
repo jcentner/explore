@@ -122,21 +122,40 @@ Third-person camera that handles spherical gravity orientation.
 
 Decouples input from consumers. Single source of truth for input state.
 
-**Properties:**
+**Player Properties:**
 ```csharp
-public Vector2 MoveInput { get; }
-public Vector2 LookInput { get; }
-public bool JumpPressed { get; }
-public bool InteractPressed { get; }
-public bool BoardPressed { get; }
+public Vector2 MoveInput { get; }      // WASD/Left Stick (normalized)
+public Vector2 LookInput { get; }      // Mouse/Right Stick
+public bool SprintHeld { get; }        // Shift held
 ```
 
-**Events:**
+**Ship Properties:**
+```csharp
+public Vector2 ShipThrustInput { get; }   // X=strafe, Y=forward
+public float ShipVerticalInput { get; }    // -1 down, +1 up
+public Vector2 ShipLookInput { get; }      // X=yaw, Y=pitch
+public float ShipRollInput { get; }        // Q/E roll
+public bool ShipBrakeHeld { get; }
+public bool ShipBoostHeld { get; }
+```
+
+**Player Events:**
 ```csharp
 public event Action OnJump;
-public event Action OnInteract;
-public event Action OnBoard;
+public event Action OnInteract;      // Used for boarding/interactions
 public event Action OnPause;
+```
+
+**Ship Events:**
+```csharp
+public event Action OnShipExit;      // Tab to disembark
+```
+
+**Action Map Switching:**
+```csharp
+public void EnablePlayerInput();
+public void EnableShipInput();
+public void DisableAllInput();
 ```
 
 ## Movement Algorithm

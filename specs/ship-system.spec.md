@@ -68,24 +68,25 @@ public bool IsBoosting { get; }
 public Vector3 Velocity { get; }
 ```
 
-### ShipBoardingZone : MonoBehaviour
+### ShipBoardingTrigger : MonoBehaviour
 
 Trigger zone for boarding the ship.
 
 **Inspector Fields:**
 ```csharp
 [SerializeField] ShipController ship;
-[SerializeField] Transform exitPoint;      // Where player appears on exit
-[SerializeField] Transform pilotSeat;      // Where player sits (visual)
-[SerializeField] float boardingDuration = 0.5f;
+[SerializeField] ShipCamera shipCamera;
+[SerializeField] ShipInput shipInput;
+[SerializeField] Transform exitPoint;         // Where player appears on exit
+[SerializeField] float exitCheckRadius = 1f;  // Ground check for safe exit
+[SerializeField] LayerMask groundLayers;      // What counts as ground
 ```
 
 **Behavior:**
-1. Player enters trigger + presses Board
-2. Disable player controller, play boarding animation
-3. Parent player to ship (or hide)
-4. Enable ship controls
-5. On exit: reverse process, place at exitPoint
+1. Player enters trigger → Shows interaction prompt via `InteractionPromptService`
+2. Player presses Interact (F) → Initiates boarding via `PlayerStateController`
+3. On disembark → Finds safe exit position via ground raycast
+4. Uses `InputReader.OnInteract` event for boarding, `OnShipExit` for disembarking
 
 ### ShipCamera : MonoBehaviour
 

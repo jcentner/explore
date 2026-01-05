@@ -110,10 +110,13 @@ Primary inspiration: *Outer Wilds* feel (learnable systemic physics + exploratio
 
 ### 7.4 Scene & Streaming Strategy
 
+**Target Architecture (Post-MVP):**
 * Scene `Core`: player, ship, UI, managers (persistent)
 * Scene `System_A`: planets, props, POIs
 * Scene `Gate_Destination_A`: destination environment
 * Gate transition loads/unloads scenes asynchronously.
+
+**Current (MVP):** Single `TestGravity.unity` scene contains all content. Multi-scene streaming deferred until Gate Transition milestone.
 
 ### 7.5 Gate Transition Strategy (Stylized Load)
 
@@ -221,14 +224,18 @@ Game.Core.asmdef          → Core/, interfaces, utilities, constants (Tags, Lay
     ↑
 Game.Gravity.asmdef       → Gravity/ (depends on Core)
     ↑
-Game.Player.asmdef        → Player/ (depends on Core, Gravity)
+Game.Player.asmdef        → Player/ (depends on Core, Gravity, InputSystem)
     ↑
-Game.Ship.asmdef          → Ship/ (depends on Core, Gravity, Player)
-    ↑
-Game.World.asmdef         → Gates/, Interaction/, Save/ (depends on Core, Gravity)
+Game.Ship.asmdef          → Ship/ (depends on Core, Gravity, Player, InputSystem)
 
-Game.UI.asmdef            → UI/ (depends on Core) — decoupled from gameplay systems
+Game.Gates.asmdef         → Gates/ (depends on Core, Gravity)
+Game.Interaction.asmdef   → Interaction/ (depends on Core, InputSystem)
+Game.Save.asmdef          → Save/ (depends on Core)
+
+Game.UI.asmdef            → UI/ (depends on Core, Gravity) — decoupled from gameplay systems
 ```
+
+**Rationale:** Separate assemblies for Gates, Interaction, and Save provide better modularity than a combined Game.World assembly. Each system can evolve independently.
 
 **Setup:** Create `.asmdef` files in each Scripts subfolder. Reference dependencies explicitly.
 
@@ -260,15 +267,20 @@ Using Unity's **new Input System** (package already installed).
 
 ### 12.1 Gameplay Systems (Components)
 
-* `GravitySource` (surfaceRadius, surfaceGravity)
-* `GravityManager` (registry, accumulated gravity queries)
-* `GravitySolver` (applies gravity, zero-g detection)
-* `CharacterMotorSpherical`
-* `ShipController`
-* `FloatingOriginManager` (optional for MVP)
-* `GateController` (transition orchestration)
-* `InteractionSystem` (raycast + prompt)
-* `SaveSystem` (simple flags/state)
+**Implemented:**
+* `GravityBody` — Defines gravity source (surfaceRadius, surfaceGravity, inverse-square falloff)
+* `GravityManager` — Registry, accumulated gravity queries, dominant source selection
+* `GravitySolver` — Applies gravity to entities, zero-g detection, smooth orientation
+* `CharacterMotorSpherical` — On-foot movement with spherical gravity
+* `ShipController` — 6DOF flight with physics
+* `ShipBoardingTrigger` — Boarding zone and transition handling
+* `PlayerStateController` — State machine (OnFoot, InShip, etc.)
+
+**Deferred:**
+* `FloatingOriginManager` — For precision at large distances (if jitter becomes issue)
+* `GateController` — Gate transition orchestration (Milestone 7)
+* `InteractionSystem` — Raycast + prompt system (Milestone 6 UI Foundation)
+* `SaveSystem` — Progression state persistence (Milestone 8)
 
 ### 12.2 Gravity Formula
 
@@ -299,14 +311,23 @@ g = surfaceGravity × (surfaceRadius² / distance²)
 
 ### 12.4 Core Utilities
 
-Centralized in `Explorer.Core` to enable decoupled architecture:
+Centralized in `Explorer.Core` namespace to enable decoupled architecture.
 
+**Namespace convention:** All assemblies use `Explorer.[System]` (e.g., `Explorer.Gravity`, `Explorer.Player`).
+
+**Constants (in `Tags.cs`):**
 * **`Tags`** – String constants for Unity tags (`Tags.PLAYER`, `Tags.GROUND`)
 * **`Layers`** – Layer indices and pre-computed masks (`Layers.GROUND_MASK`)
-* **`InteractionPromptService`** – Service locator for UI prompts (gameplay systems call `Show()`/`Hide()` without UI dependency)
-* **`IInteractionPrompt`** – Interface implemented by UI systems
-* **`PlayerPilotingService`** – Service locator for player piloting state (gravity/UI systems query without Player assembly dependency)
-* **`IPlayerPilotingState`** – Interface implemented by `PlayerStateController`
+
+**Service Locators:**
+* **`InteractionPromptService`** – UI prompts (gameplay systems call `Show()`/`Hide()` without UI dependency)
+* **`PlayerPilotingService`** – Player piloting state queries (gravity/UI systems query without Player assembly dependency)
+
+**Interfaces:**
+* **`IInteractionPrompt`** – Implemented by `BoardingPrompt` in UI
+* **`IPlayerPilotingState`** – Implemented by `PlayerStateController` in Player
+* **`IGravitySource`** – Implemented by `GravityBody` in Gravity
+* **`IGravityAffected`** – Implemented by `GravitySolver` in Gravity
 
 ## 13) Code Conventions
 

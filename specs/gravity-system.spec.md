@@ -39,6 +39,29 @@ Manage gravitational attraction toward celestial bodies. Entities affected by gr
 - **Tunable** – Designers can adjust feel without code changes
 - **Performant** – O(n) per affected entity, where n = active gravity sources
 
+## Enums
+
+### GravityMode
+
+Determines how a gravity source participates in multi-body gravity calculations.
+
+```csharp
+public enum GravityMode
+{
+    /// <summary>Only considered for dominant source selection (orientation).</summary>
+    Dominant,
+    /// <summary>Only contributes to accumulated gravity sum (force).</summary>
+    Accumulate,
+    /// <summary>Both contributes to sum AND can be selected as dominant.</summary>
+    Both
+}
+```
+
+**Use cases:**
+- `Both` (default): Standard planets/moons that affect both movement and orientation
+- `Accumulate`: Subtle gravity wells that pull but don't reorient the player
+- `Dominant`: Artificial gravity zones that only affect orientation, not physics
+
 ## Interfaces
 
 ### IGravitySource
@@ -48,19 +71,14 @@ Implemented by objects that generate gravity fields.
 ```csharp
 public interface IGravitySource
 {
-    /// <summary>Center point of the gravity field (world space).</summary>
-    Vector3 GravityCenter { get; }
+    Vector3 GravityCenter { get; }      // Center point (world space)
+    float BaseStrength { get; }          // Gravity at surface (m/s²)
+    float MaxRange { get; }              // Outer boundary (performance cutoff)
+    float SurfaceRadius { get; }         // Body radius (for inverse-square)
+    float Mass { get; }                  // Derived: BaseStrength × SurfaceRadius²
+    int Priority { get; }                // Tie-breaker for dominant selection
+    GravityMode Mode { get; }            // How source participates in multi-body
     
-    /// <summary>Gravity strength at the surface (m/s²).</summary>
-    float BaseStrength { get; }
-    
-    /// <summary>Maximum range of the gravity field (meters).</summary>
-    float MaxRange { get; }
-    
-    /// <summary>Priority for tie-breaking overlapping fields.</summary>
-    int Priority { get; }
-    
-    /// <summary>Calculate gravity vector for a given world position.</summary>
     Vector3 CalculateGravity(Vector3 worldPosition);
 }
 ```
@@ -72,14 +90,10 @@ Implemented by entities that respond to gravity.
 ```csharp
 public interface IGravityAffected
 {
-    /// <summary>Current gravity vector being applied.</summary>
-    Vector3 CurrentGravity { get; }
-    
-    /// <summary>The dominant gravity source affecting this entity.</summary>
-    IGravitySource DominantSource { get; }
-    
-    /// <summary>Whether gravity is currently enabled for this entity.</summary>
-    bool GravityEnabled { get; set; }
+    Vector3 CurrentGravity { get; }      // Accumulated gravity being applied
+    IGravitySource DominantSource { get; } // Source used for orientation
+    bool GravityEnabled { get; set; }    // Toggle gravity response
+    bool IsInZeroG { get; }              // True when gravity < threshold
 }
 ```
 
@@ -91,71 +105,95 @@ Attached to planets, moons, asteroids – any body with gravity.
 
 **Inspector Fields:**
 - `baseStrength` (float, default 9.8) – Surface gravity in m/s²
-- `maxRange` (float) – Outer boundary of gravity influence
-- `priority` (int, default 0) – Higher = wins ties
-- `useColliderRadius` (bool) – Auto-calculate surface from collider
+- `maxRange` (float) – Outer boundary of gravity influence (hard cutoff)
+- `surfaceRadius` (float) – Body radius, auto-detected from SphereCollider if `useColliderRadius` is true
+- `priority` (int, default 0) – Tie-breaker for dominant selection (higher wins)
+- `mode` (GravityMode, default Both) – How source participates in multi-body
+- `useColliderRadius` (bool, default true) – Auto-calculate surface from SphereCollider
+
+**Derived Properties:**
+- `Mass` = `baseStrength × surfaceRadius²` – Used in inverse-square formula
 
 **Runtime:**
 - Registers with `GravityManager` on `OnEnable`
 - Unregisters on `OnDisable`
-- Draws gizmo showing gravity range in editor
+- Draws gizmo showing gravity range and inverse-square contours (50%, 25%, 10%)
 
 ### GravitySolver : MonoBehaviour, IGravityAffected
 
 Attached to player, ship, physics objects that need gravity.
 
 **Inspector Fields:**
-- `gravityEnabled` (bool, default true)
+- `gravityEnabled` (bool, default true) – Toggle gravity response
 - `gravityScale` (float, default 1.0) – Multiplier for gameplay tuning
+- `minGravityThreshold` (float, default 0.25) – Below this, gravity clamped to zero (triggers zero-g)
+- `orientationSpeed` (float, default 90) – Degrees/second for up-alignment to dominant source
 
 **Runtime:**
-- Queries `GravityManager` for dominant source each `FixedUpdate`
-- Exposes `CurrentGravity` for motor/rigidbody to consume
-- Does NOT apply forces directly (consumer's responsibility)
+- Queries `GravityManager.GetAccumulatedGravity()` each `FixedUpdate`
+- Queries `GravityManager.GetDominantSource()` for orientation target
+- Clamps gravity below threshold to zero (enables emergent Lagrange points)
+- Smoothly blends `LocalUp` toward dominant source direction
+- Exposes `CurrentGravity` and `IsInZeroG` for consumers
 
 ### GravityManager : Singleton
 
 Central registry of all active gravity sources.
 
-**Responsibilities:**
-- Maintain list of active `IGravitySource` instances
-- Provide `GetDominantSource(Vector3 position)` query
-- Provide `GetGravityAt(Vector3 position)` for quick lookups
+**Key Methods:**
+- `Register(IGravitySource)` / `Unregister(IGravitySource)` – Called by GravityBody
+- `GetAccumulatedGravity(Vector3)` – Sum of all sources (respects `GravityMode`)
+- `GetDominantSource(Vector3)` – Strongest source for orientation (respects `GravityMode`)
+- `GetAllContributors(Vector3)` – Debug: all sources with magnitude/percentage
+- `GetGravityAt(Vector3)` – Legacy: gravity from dominant source only
 
 ## Gravity Formula
 
-**Linear falloff with hard cutoff** (recommended):
+**Inverse-square falloff with hard cutoff:**
 
 ```
 distance = Vector3.Distance(entityPosition, gravityCenter)
 if (distance > maxRange) return Vector3.zero
+if (distance < surfaceRadius) distance = surfaceRadius  // Clamp at surface
 
-normalizedDistance = distance / maxRange
-strength = baseStrength * (1 - normalizedDistance)
+// Inverse-square: g = g₀ × (r₀² / r²)
+magnitude = baseStrength * (surfaceRadius² / distance²)
 direction = (gravityCenter - entityPosition).normalized
-gravity = direction * strength
+gravity = direction * magnitude
 ```
 
-**Why linear:**
-- Predictable feel for players
-- No division-by-zero edge cases
-- Easy to visualize and tune
+**Why inverse-square:**
+- Physically accurate – feels natural to players
+- Multi-body interactions work correctly – gravity sources combine realistically
+- Emergent Lagrange points – gravity cancels where sources balance
+- Surface clamping prevents infinite gravity at center
 
 ## Behaviors
 
 | Scenario | Behavior |
 |----------|----------|
-| Entity enters gravity field | GravitySolver recalculates dominant source |
-| Multiple overlapping fields | Highest priority wins; if tied, closest wins |
-| Entity exactly equidistant | Use priority; if still tied, use instance ID (deterministic) |
+| Entity enters gravity field | GravitySolver queries accumulated gravity from all sources |
+| Multiple overlapping fields | All sources contribute to accumulated gravity (inverse-square sum) |
+| Dominant source selection | Strongest magnitude wins; priority is tie-breaker only |
+| Gravity below threshold | Clamped to zero → `IsInZeroG = true` |
+| Emergent Lagrange points | Where sources cancel out, gravity < threshold → zero-g zone |
 | Ship toggles gravity | Set `GravityEnabled = false`, ship ignores all fields |
-| Zero-g zone needed | Create explicit zone trigger, not emergent from field gaps |
+
+## Zero-G Detection
+
+When accumulated gravity magnitude falls below `minGravityThreshold` (default 0.25 m/s²):
+- Gravity is clamped to `Vector3.zero`
+- `IsInZeroG` property returns `true`
+- Player enters thrust-based movement mode
+- Creates emergent Lagrange-like points where gravity sources balance
 
 ## Edge Cases
 
-1. **No gravity sources** – Return `Vector3.zero`, entity floats
+1. **No gravity sources** – Return `Vector3.zero`, entity floats (`IsInZeroG = true`)
 2. **Source destroyed while dominant** – Solver recalculates next frame
 3. **Very fast entity crosses fields** – Recalc happens in `FixedUpdate`, may feel abrupt (acceptable for MVP)
+4. **Inside gravity body** – Distance clamped to surface radius (prevents infinite gravity)
+5. **GravityMode.Accumulate source** – Contributes to force but never selected as dominant
 
 ## Performance Notes
 
@@ -178,10 +216,18 @@ gravity = direction * strength
 ## Files
 
 ```
+Scripts/Core/
+├── IGravitySource.cs      # Interface + GravityMode enum
+├── IGravityAffected.cs    # Interface
+
 Scripts/Gravity/
-├── IGravitySource.cs
-├── IGravityAffected.cs
-├── GravityBody.cs
-├── GravitySolver.cs
-└── GravityManager.cs
+├── GravityBody.cs         # Gravity source component
+├── GravitySolver.cs       # Gravity consumer component
+├── GravityManager.cs      # Singleton registry
+├── GravityPreset.cs       # ScriptableObject for preset configurations
+├── GravityDebugPanel.cs   # F3 debug overlay
+└── GravityStableZone.cs   # Optional visual marker for stable points
+
+Scripts/UI/Panels/
+└── GravityIndicatorPanel.cs  # HUD gravity direction indicator
 ```
