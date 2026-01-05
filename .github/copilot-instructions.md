@@ -6,7 +6,7 @@ applyTo: "**"
 
 ## Project Overview
 
-A 3D exploration game in Unity 6 (URP) with spherical gravity planets, ship flight, and stargate-style transitions. See `design_doc.md` for full architecture.
+A 3D exploration game in Unity 6 (URP) with spherical gravity planets, ship flight, and stargate-style transitions. See [design_doc.md](../design_doc.md) for vision/scope and [ARCHITECTURE.md](../ARCHITECTURE.md) for technical details.
 
 ## Key Context Files
 
@@ -14,10 +14,19 @@ Always reference these when working on this project:
 
 | File | Purpose |
 |------|---------|
-| `design_doc.md` | Architecture, milestones, conventions |
+| `design_doc.md` | Vision, scope, milestones |
+| `ARCHITECTURE.md` | Technical implementation, systems, assemblies |
 | `CHANGELOG.md` | Current progress, what's implemented |
 | `specs/*.spec.md` | Per-system specifications |
 | `plans/milestone-X.plan.md` | Detailed step-by-step plan for current milestone |
+
+### When to Read Which File
+
+- **Starting a session?** → Read `CHANGELOG.md` first (current state)
+- **Implementing a system?** → Read `ARCHITECTURE.md` + relevant `specs/*.spec.md`
+- **Questioning scope or priorities?** → Read `design_doc.md`
+- **Working on a milestone?** → Read `plans/milestone-X.plan.md`
+- **Writing C# code?** → The `csharp.instructions.md` is auto-applied to `*.cs` files
 
 ## Milestone Planning
 
