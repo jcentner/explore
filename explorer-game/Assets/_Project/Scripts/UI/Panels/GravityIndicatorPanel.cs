@@ -98,10 +98,7 @@ namespace Explorer.UI
         private bool _wasInZeroG;
         private CanvasGroup _canvasGroup;
         private bool _useTextArrow; // True if using TextMeshProUGUI, false if using Image
-        private Transform _playerTransform;
-        private Transform _lastPlayerParent;
-        private float _recheckInterval = 0.5f;
-        private float _recheckTimer;
+        private bool _wasInShip;
 
         // === Unity Lifecycle ===
         private void Awake()
@@ -186,23 +183,19 @@ namespace Explorer.UI
 
         private void Update()
         {
-            // Check if player's parent changed (boarded/exited ship)
-            if (_playerTransform != null && _playerTransform.parent != _lastPlayerParent)
+            // Check if player state changed (boarded/exited ship)
+            bool isInShip = PlayerPilotingService.IsPiloting;
+            if (isInShip != _wasInShip)
             {
-                _lastPlayerParent = _playerTransform.parent;
+                _wasInShip = isInShip;
                 _target = null;
-                _gravityAffected = null;
+                _gravityAffected = null; // Force re-find
             }
             
-            // Periodic re-check if no target
+            // Re-find target if needed
             if (_gravityAffected == null)
             {
-                _recheckTimer -= Time.deltaTime;
-                if (_recheckTimer <= 0f)
-                {
-                    _recheckTimer = _recheckInterval;
-                    FindGravityTarget();
-                }
+                FindGravityTarget();
                 if (_gravityAffected == null)
                     return;
             }
@@ -243,28 +236,24 @@ namespace Explorer.UI
                     return;
             }
 
-            // Try to find player by tag first
+            // Check if player is piloting a ship via service locator
+            if (PlayerPilotingService.IsPiloting && PlayerPilotingService.CurrentShip != null)
+            {
+                // Use ship's gravity solver
+                var shipGravity = PlayerPilotingService.CurrentShip.GetComponent<IGravityAffected>();
+                if (shipGravity != null)
+                {
+                    _target = PlayerPilotingService.CurrentShip;
+                    _gravityAffected = shipGravity;
+                    return;
+                }
+            }
+
+            // Try to find player by tag
             var player = GameObject.FindGameObjectWithTag(Tags.PLAYER);
             if (player != null)
             {
-                _playerTransform = player.transform;
-                _lastPlayerParent = _playerTransform.parent;
-                
-                // Player might be in a ship - check parent hierarchy for IGravityAffected first
-                Transform current = player.transform.parent;
-                while (current != null)
-                {
-                    var parentGravity = current.GetComponent<IGravityAffected>();
-                    if (parentGravity != null)
-                    {
-                        _target = current;
-                        _gravityAffected = parentGravity;
-                        return;
-                    }
-                    current = current.parent;
-                }
-                
-                // No parent with gravity - check player itself
+                // Check player itself
                 var playerGravity = player.GetComponent<IGravityAffected>();
                 if (playerGravity != null)
                 {
@@ -275,7 +264,7 @@ namespace Explorer.UI
             }
             
             // Fallback: find any GravitySolver in scene
-            var solver = FindFirstObjectByType<Explorer.Gravity.GravitySolver>();
+            var solver = FindFirstObjectByType<GravitySolver>();
             if (solver != null)
             {
                 _target = solver.transform;

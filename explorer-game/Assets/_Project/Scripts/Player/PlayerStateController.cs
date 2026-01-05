@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Explorer.Core;
 
 namespace Explorer.Player
 {
@@ -8,7 +9,7 @@ namespace Explorer.Player
     /// Manages transitions between OnFoot and InShip states,
     /// coordinates input switching, camera transitions, and player visibility.
     /// </summary>
-    public class PlayerStateController : MonoBehaviour
+    public class PlayerStateController : MonoBehaviour, IPlayerPilotingState
     {
         // === Inspector Fields ===
         [Header("References")]
@@ -73,6 +74,9 @@ namespace Explorer.Player
             }
             Instance = this;
             
+            // Register with service locator for decoupled access
+            PlayerPilotingService.Register(this);
+            
             // Auto-find references if not assigned
             if (_characterMotor == null)
                 _characterMotor = GetComponent<CharacterMotorSpherical>();
@@ -90,7 +94,10 @@ namespace Explorer.Player
         private void OnDestroy()
         {
             if (Instance == this)
+            {
                 Instance = null;
+                PlayerPilotingService.Unregister(this);
+            }
         }
         
         // === Public Methods ===

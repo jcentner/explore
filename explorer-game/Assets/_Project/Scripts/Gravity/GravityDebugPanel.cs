@@ -34,8 +34,7 @@ namespace Explorer.Gravity
         private GravityManager _gravityManager;
         private Canvas _canvas;
         private bool _isVisible = true;
-        private Transform _playerTransform;
-        private Transform _lastPlayerParent;
+        private bool _wasInShip;
 
         // === Unity Lifecycle ===
         private void Awake()
@@ -69,10 +68,11 @@ namespace Explorer.Gravity
 
         private void Update()
         {
-            // Check if player's parent changed (boarded/exited ship)
-            if (_playerTransform != null && _playerTransform.parent != _lastPlayerParent)
+            // Check if player state changed (boarded/exited ship)
+            bool isInShip = PlayerPilotingService.IsPiloting;
+            if (isInShip != _wasInShip)
             {
-                _lastPlayerParent = _playerTransform.parent;
+                _wasInShip = isInShip;
                 _targetSolver = null; // Force re-find
             }
             
@@ -94,18 +94,19 @@ namespace Explorer.Gravity
 
         private void FindTargetSolver()
         {
+            // Check if player is piloting a ship via service locator
+            if (PlayerPilotingService.IsPiloting && PlayerPilotingService.CurrentShip != null)
+            {
+                // Use ship's gravity solver
+                _targetSolver = PlayerPilotingService.CurrentShip.GetComponent<GravitySolver>();
+                if (_targetSolver != null)
+                    return;
+            }
+
             // Try to find player
             var player = GameObject.FindGameObjectWithTag(Tags.PLAYER);
             if (player != null)
             {
-                _playerTransform = player.transform;
-                _lastPlayerParent = _playerTransform.parent;
-                
-                // Check parent first (might be in ship) - ship's solver takes priority
-                _targetSolver = player.GetComponentInParent<GravitySolver>();
-                if (_targetSolver != null && _targetSolver.gameObject != player)
-                    return; // Found ship's solver
-                
                 // Check player itself
                 _targetSolver = player.GetComponent<GravitySolver>();
                 if (_targetSolver != null)
