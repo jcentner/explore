@@ -1,6 +1,6 @@
 # Gravity System Specification
 
-**Status: ✅ IMPLEMENTED (Milestone 1)**
+**Status: ✅ IMPLEMENTED (Milestone 1 + 3)**
 
 ## Implementation Notes
 
@@ -11,11 +11,21 @@
 | `GravityManager` | `Scripts/Gravity/GravityManager.cs` | ✅ Complete |
 | `GravityBody` | `Scripts/Gravity/GravityBody.cs` | ✅ Complete |
 | `GravitySolver` | `Scripts/Gravity/GravitySolver.cs` | ✅ Complete |
+| `GravityPreset` | `Scripts/Gravity/GravityPreset.cs` | ✅ Complete |
+| `GravityDebugPanel` | `Scripts/Gravity/GravityDebugPanel.cs` | ✅ Complete |
+| `GravityIndicatorPanel` | `Scripts/UI/Panels/GravityIndicatorPanel.cs` | ✅ Complete |
+
+### Milestone 3 Enhancements
+- **Multi-body accumulation**: All sources contribute simultaneously (inverse-square falloff)
+- **Smooth orientation blending**: No jarring snaps when crossing boundaries (90°/s default)
+- **Emergent Lagrange points**: Gravity < 0.25 m/s² clamped to zero automatically
+- **Zero-G behavior**: Thrust-based movement when floating
+- **UI indicator**: Arrow shows gravity direction, "ZERO-G" text when floating
+- **Debug panel (F3)**: Position, velocity, contributors, solver settings
 
 ### Known Limitations
-- Sphere of influence uses simple distance-based selection (priority, then closest)
 - No spatial partitioning yet (fine for < 10 sources)
-- No blending between gravity sources (hard switch)
+- Orientation uses dominant source only (strongest contributor)
 
 ---
 

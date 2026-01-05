@@ -6,16 +6,60 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Milestone 3 Planning: Advanced Gravity System
+### Milestone 3: Advanced Gravity System ✅
 
 #### Added
-- **Milestone 3 Plan** (`plans/milestone-3.plan.md`)
-  - Multi-body gravity accumulation architecture
-  - Smooth orientation transitions (no jarring snaps)
-  - Lagrange-point emergent behavior design
-  - Gravity UI indicator specification
-  - Five implementation phases with task breakdowns
-  - GravityPreset ScriptableObject for designer tuning
+- **Multi-body gravity accumulation**
+  - `GravityManager.GetAccumulatedGravity()` sums contributions from all sources
+  - Inverse-square falloff: `g = g₀ × (r₀² / r²)`
+  - `GravityContribution` struct for debugging/UI
+  
+- **Smooth orientation transitions**
+  - `GravitySolver` smoothly blends orientation (90°/s default)
+  - `CharacterMotorSpherical` and `PlayerCamera` use degrees/second with rate limiting
+  - Proper 180° flip handling with consistent rotation axis
+  
+- **Emergent Lagrange points**
+  - Gravity below threshold (0.25 m/s²) clamped to zero automatically
+  - Zero-g zones emerge naturally where gravity sources cancel out
+  - No explicit zone objects needed
+  
+- **Player zero-g behavior**
+  - Thrust-based movement (WASD + Space/C) when floating
+  - Rigidbody drag for natural slowdown
+  - Slow rotation alignment to camera up for stability
+  
+- **Gravity UI indicator**
+  - Arrow shows combined gravity direction relative to camera
+  - Scale/color indicates magnitude (magenta→yellow→white)
+  - "ZERO-G" pulsing text when floating
+  - Works correctly in both player and ship views
+  
+- **Debug panel (F3)**
+  - Position, velocity, gravity magnitude/direction
+  - Contributors breakdown with percentages
+  - Solver settings display
+
+- **Service locator pattern**
+  - `IPlayerPilotingState` interface in `Explorer.Core`
+  - `PlayerPilotingService` for decoupled ship state access
+  - Avoids circular assembly dependencies
+
+#### Changed
+- `IGravitySource` extended with `Mass`, `SurfaceRadius`, `Mode` properties
+- `GravityBody` uses inverse-square falloff with surface clamping
+- `GravitySolver` queries accumulated gravity instead of single source
+- Gizmos show inverse-square contours (50%, 25%, 10%)
+
+#### Files Created
+- `Assets/_Project/Scripts/Gravity/GravityPreset.cs`
+- `Assets/_Project/Scripts/Gravity/GravityStableZone.cs` (optional visual marker)
+- `Assets/_Project/Scripts/Gravity/GravityDebugPanel.cs`
+- `Assets/_Project/Scripts/UI/Panels/GravityIndicatorPanel.cs`
+- `Assets/_Project/Scripts/Core/IPlayerPilotingState.cs`
+- `Assets/_Project/Materials/M_Planet_B.mat`
+
+---
 
 ### Milestone 4 Planning: Enhanced Camera & Movement Controls
 

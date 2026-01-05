@@ -1,6 +1,6 @@
 # Milestone 3: Advanced Gravity System
 
-**Status:** � In Progress  
+**Status:** ✅ Complete  
 **Goal:** Evolve from single-dominant-source gravity to multi-body accumulation with emergent Lagrange-like behavior, while maintaining the "learnable physics" pillar.
 
 ## 1. Context & Problem Statement
@@ -279,8 +279,8 @@ _smoothedUp = Vector3.Slerp(_smoothedUp, _targetUp, blendT).normalized;
 #### Task 5.3: Validation Testing
 - [x] Walk on planet A, gravity pulls down correctly
 - [x] Fly toward planet B, feel gravity shift smoothly
-- [ ] Park ship at Lagrange point, experience near-zero-g
-- [ ] Exit ship at Lagrange point, player floats
+- [x] Park ship at Lagrange point, experience near-zero-g
+- [x] Exit ship at Lagrange point, player floats
 - [x] UI indicator matches experienced gravity
 
 **Files Created:**
@@ -290,7 +290,7 @@ _smoothedUp = Vector3.Slerp(_smoothedUp, _targetUp, blendT).normalized;
 **Scene Setup (TestGravity):**
 - `Planet_Test` at (2000, 0, 0) - scale 500, gravity 15 m/s²
 - `Planet_B` at (2600, 0, 0) - scale 400, gravity 12 m/s² (blue)
-- `LagrangePoint_L1` at (2300, 0, 0) - GravityStableZone with 50m forced zero-g
+- Emergent Lagrange point between planets (gravity < 0.25 m/s² = zero-g)
 - `Moon_Test` at (2399, 381, 0) - smaller orbiting body
 - `GravityDebugPanel` - press F3 to toggle debug info
 
@@ -396,14 +396,14 @@ public class GravityPreset : ScriptableObject
 
 ## 9. Definition of Done
 
-- [ ] Multiple gravity sources contribute to physics simultaneously
-- [ ] Smooth orientation transitions (no jarring snaps)
-- [ ] Emergent stable points between bodies (zero-g zones)
-- [ ] Gravity direction UI indicator functional
-- [ ] All existing gameplay (walking, flying, boarding) still works
-- [ ] Designer-tunable via curves and presets
-- [ ] Spec updated with new behaviors
-- [ ] CHANGELOG updated
+- [x] Multiple gravity sources contribute to physics simultaneously
+- [x] Smooth orientation transitions (no jarring snaps)
+- [x] Emergent stable points between bodies (zero-g zones)
+- [x] Gravity direction UI indicator functional
+- [x] All existing gameplay (walking, flying, boarding) still works
+- [x] Designer-tunable via curves and presets
+- [x] Spec updated with new behaviors
+- [x] CHANGELOG updated
 
 ---
 
