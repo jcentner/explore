@@ -258,10 +258,11 @@ Using Unity's **new Input System** (package already installed).
 
 ## 12) Proposed Architecture
 
-### 12.1 Gameplay Systems (Suggested Components)
+### 12.1 Gameplay Systems (Components)
 
-* `GravityBody` (radius, curve, priority)
-* `GravitySolver` (dominant body)
+* `GravitySource` (surfaceRadius, surfaceGravity)
+* `GravityManager` (registry, accumulated gravity queries)
+* `GravitySolver` (applies gravity, zero-g detection)
 * `CharacterMotorSpherical`
 * `ShipController`
 * `FloatingOriginManager` (optional for MVP)
@@ -271,24 +272,23 @@ Using Unity's **new Input System** (package already installed).
 
 ### 12.2 Gravity Formula
 
-**Recommended approach: Linear falloff with hard cutoff**
+**Implemented approach: Inverse-square falloff**
 
 ```
-gravityStrength = baseStrength * (1 - (distance / maxRange))
-if (distance > maxRange) gravityStrength = 0
+g = surfaceGravity × (surfaceRadius² / distance²)
 ```
 
-**Why linear over inverse-square:**
-* Predictable, tunable gameplay feel
-* No infinite gravity at surface edge cases
-* Easier to balance planet "pull zones"
+**Why inverse-square:**
+* Physically accurate behavior - feels natural
+* Natural multi-body interaction - gravity sources combine realistically
+* Emergent Lagrange points where gravity cancels out
 
-**Parameters per GravityBody:**
-* `baseStrength` (m/s²) – gravity at surface (Earth ≈ 9.8, Moon ≈ 1.6)
-* `maxRange` (m) – distance where gravity reaches zero
-* `priority` (int) – tie-breaker when in overlapping fields
+**Parameters per GravitySource:**
+* `surfaceGravity` (m/s²) – gravity at surface (Earth ≈ 9.8, Moon ≈ 1.6)
+* `surfaceRadius` (m) – radius of the body's surface
+* `minGravityThreshold` (m/s²) – below this, gravity treated as zero (0.25 default)
 
-**Alternative (arcade feel):** Constant gravity within radius, instant zero outside. Simpler but less immersive.
+**Zero-G Detection:** When accumulated gravity magnitude falls below threshold, entities enter zero-g state. This creates emergent Lagrange-like points where gravity sources cancel out.
 
 ### 12.3 Visual Systems (URP)
 
@@ -305,6 +305,8 @@ Centralized in `Explorer.Core` to enable decoupled architecture:
 * **`Layers`** – Layer indices and pre-computed masks (`Layers.GROUND_MASK`)
 * **`InteractionPromptService`** – Service locator for UI prompts (gameplay systems call `Show()`/`Hide()` without UI dependency)
 * **`IInteractionPrompt`** – Interface implemented by UI systems
+* **`PlayerPilotingService`** – Service locator for player piloting state (gravity/UI systems query without Player assembly dependency)
+* **`IPlayerPilotingState`** – Interface implemented by `PlayerStateController`
 
 ## 13) Code Conventions
 
@@ -400,17 +402,18 @@ Manage gravitational attraction toward celestial bodies.
 - IGravitySource: Bodies that generate gravity fields
 
 ## Components
-- GravityBody: Defines a gravity source (radius, strength, priority)
-- GravitySolver: Calculates dominant gravity for an entity
+- GravitySource: Defines a gravity source (surfaceRadius, surfaceGravity)
+- GravityManager: Registry of sources, provides accumulated gravity queries
+- GravitySolver: Applies gravity to entities, handles zero-g detection
 
 ## Behaviors
-- Entity enters gravity field → GravitySolver recalculates
-- Multiple overlapping fields → highest priority wins
-- Ship can toggle gravity response
+- Entity queries accumulated gravity from all sources (inverse-square)
+- Smooth orientation blending toward dominant source (90°/s)
+- Gravity below threshold (0.25 m/s²) clamped to zero
 
 ## Edge Cases
-- Exactly equidistant from two bodies → use priority
-- Zero-g zones → explicitly defined, not emergent
+- Exactly equidistant from two bodies → emergent zero-g (Lagrange point)
+- Zero-g zones → emergent where sources cancel, not explicitly defined
 ```
 
 ### Prompting Tips
@@ -459,16 +462,16 @@ Manage gravitational attraction toward celestial bodies.
 
 ---
 
-### Milestone 3: Advanced Gravity System
+### Milestone 3: Advanced Gravity System ✅ COMPLETE
 
-* **Problem:** Single-dominant-source gravity feels artificial at boundaries
-* **Solution:** Multi-body accumulation with smooth transitions
-* `GravityManager.GetAccumulatedGravity()` - Weighted sum from all sources
-* `GravityPreset` ScriptableObject - Designer-tunable falloff curves
-* Smooth orientation blending (no jarring snaps when dominant source changes)
-* Emergent Lagrange-like stable points (zero-g zones)
-* Gravity vector UI indicator (direction + magnitude)
-* Zero-g detection for player float state
+* ✅ Multi-body gravity accumulation (inverse-square falloff)
+* ✅ `GravityManager.GetAccumulatedGravity()` - Sum of all gravity sources
+* ✅ Smooth orientation blending (90°/s rotation toward dominant source)
+* ✅ Emergent Lagrange points (gravity < 0.25 m/s² clamped to zero)
+* ✅ Gravity UI indicator (directional arrow + ZERO-G text)
+* ✅ F3 debug panel (position, velocity, gravity info, contributors)
+* ✅ Player zero-g thrust movement (WASD + Shift/Ctrl)
+* ✅ Service locator pattern (`PlayerPilotingService`) for decoupled architecture
 
 ---
 
