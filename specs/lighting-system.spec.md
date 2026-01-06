@@ -192,14 +192,14 @@ Use **custom unlit shaders** that calculate sun-facing illumination mathematical
 
 | Component | Status |
 |-----------|--------|
-| SolarSystemLightingManager | 🔲 Not started |
-| DistantShadowCaster | 🔲 Not started |
-| DistantObjectSwitcher | 🔲 Not started |
-| CometTailController | 🔲 Not started |
-| DistantLighting.hlsl | 🔲 Not started |
-| SH_DistantPlanet | 🔲 Not started |
-| SH_DistantObject | 🔲 Not started |
-| SH_CometTail | 🔲 Not started |
+| SolarSystemLightingManager | ✅ Complete |
+| DistantShadowCaster | ✅ Complete |
+| DistantObjectSwitcher | ✅ Complete |
+| CometTailController | 🔲 Deferred |
+| DistantLighting.hlsl | ✅ Complete |
+| SH_DistantPlanet | ✅ Complete |
+| SH_DistantObject | ✅ Complete |
+| SH_CometTail | 🔲 Deferred |
 
 ## Dependencies
 

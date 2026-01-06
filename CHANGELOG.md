@@ -6,6 +6,19 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Milestone 5: Solar System Lighting ✅
+
+- Custom unlit shaders for correct sun-facing illumination at any viewpoint
+- `SolarSystemLightingManager` sets global shader properties (`_SunPosition`, `_SunColor`, etc.)
+- `DistantShadowCaster` for cylindrical eclipse shadows (up to 8 casters)
+- `DistantObjectSwitcher` for LOD switching between URP Lit and distant shaders
+- `SH_DistantPlanet.shader` - Per-pixel soft terminator for planets/moons
+- `SH_DistantObject.shader` - Phase angle mode for asteroids/small objects
+- `DistantLighting.hlsl` - Shared HLSL include with lighting functions
+- Test materials created and applied to celestial bodies
+
+---
+
 ### Milestone 4: Camera Perspective Toggle ✅
 
 - First-person / third-person camera toggle (V key)
