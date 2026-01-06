@@ -1,29 +1,31 @@
-# Milestone 4: Enhanced Camera & Movement Controls
+# Milestone 4: Camera Perspective Toggle
 
 **Status:** 🔲 Not Started  
-**Goal:** Expand player mobility with camera perspective options, airborne roll control, and a jetpack system for zero-g/low-g exploration.
+**Goal:** Add first-person / third-person camera toggle for flexible exploration views.
 
 ## 1. Context & Problem Statement
 
-### Current State (Milestone 1-2)
+### Current State (Milestone 1-3)
 - Third-person camera only
 - Player rotation locked to gravity direction
-- No movement control when airborne (only air control modifier)
-- Zero-g zones (from M3) leave player helpless
+- Zero-g zones (from M3) leave player helpless (intentional for now)
 
 ### Desired State
-- Toggle between first-person and third-person views
-- Roll control when airborne (Q/E keys)
-- Full jetpack system for 6DOF movement in low-g
-- Fuel/energy management for jetpack balance
+- Toggle between first-person and third-person views (V key)
+- Smooth transitions between perspectives
+- Player model hidden in first-person (shadows preserved)
 
 ### Design Pillar Alignment
 > "Exploration-first"
 
-Enhanced mobility directly supports exploration:
-- First-person for tight spaces, detail examination
-- Jetpack for reaching otherwise inaccessible areas
-- Zero-g traversal without depending on ship
+Camera perspective options support exploration:
+- First-person for tight spaces, detail examination, immersion
+- Third-person for navigation, situational awareness
+
+### Out of Scope (Deferred)
+- Jetpack system (removed from M4)
+- Airborne roll control (removed from M4)
+- Player zero-g thrust (intentionally helpless in space)
 
 ---
 
@@ -33,292 +35,142 @@ Enhanced mobility directly supports exploration:
 | Aspect | Third-Person | First-Person |
 |--------|--------------|--------------|
 | View | Behind/above player | From player's eyes |
-| Player model | Visible | Hidden (arms only optional) |
-| Use case | Navigation, combat | Detail examination, tight spaces |
+| Player model | Visible | Hidden (shadow caster only) |
+| Use case | Navigation, awareness | Detail examination, tight spaces |
 | Default | Yes | No |
 
-### Feature B: Airborne Roll Control
-- When not grounded, Q/E keys rotate player around forward axis
-- Allows reorientation in zero-g
-- Helps with landing approach angle
-- Does NOT affect grounded movement
+### Transition Behavior
+- V key toggles between perspectives
+- Smooth position/rotation interpolation (0.3s)
+- No instant snapping
 
-### Feature C: Jetpack System
-| Control | Action |
-|---------|--------|
-| J | Toggle jetpack on/off |
-| WASD | Horizontal thrust (relative to camera) |
-| Shift | Vertical thrust up (relative to player) |
-| Ctrl | Vertical thrust down (relative to player) |
-
-### Feature D: Fuel/Energy Management
-- Jetpack has limited fuel capacity
-- Fuel regenerates slowly when grounded
-- Fuel pickups in environment (optional)
-- Visual/audio feedback for fuel state
+### First-Person Model Handling
+- Hide mesh renderers on player model
+- Keep shadow casters enabled (player still casts shadow)
+- Toggle via `Renderer.enabled` or shadow-only layer
 
 ---
 
 ## 3. Architecture
 
-### New Components
+### PlayerCamera Extensions
 ```
-PlayerCameraController (replaces/extends PlayerCamera)
-├── ThirdPersonMode
-├── FirstPersonMode
-└── TransitionBetweenModes()
-
-JetpackController
-├── IsActive (toggle state)
-├── Fuel (current/max)
-├── ApplyThrust(Vector3 direction)
-└── ConsumesFuel / RegeneratesFuel
-
-AirborneRotationController
-├── HandleRollInput(float input)
-└── Only active when !IsGrounded
+PlayerCamera (existing)
+├── CameraPerspective enum { ThirdPerson, FirstPerson }
+├── _currentPerspective
+├── _firstPersonOffset (head height)
+├── _perspectiveTransitionTime
+├── TogglePerspective()
+└── SetPlayerModelVisibility(bool visible)
 ```
 
-### State Machine Updates
-```
-PlayerState (existing)
-├── OnFoot
-├── Falling      → Now has sub-states: Normal, Jetpacking
-├── InShip
-├── Interacting
-└── Transitioning
-
-OR
-
-New Parallel State: MovementMode
-├── Walking
-├── Falling
-├── Jetpacking   → Can be active while Falling or OnFoot (hovering)
-```
-
-### Input Action Map Updates
+### Input Action Updates
 ```
 Player Action Map (additions)
-├── ToggleCameraView  → V key
-├── Roll              → Q/E axis
-├── ToggleJetpack     → J key
-├── ThrustVertical    → Shift (up) / Ctrl (down) - matches ship
+└── ToggleCameraView  → V key (button)
 ```
 
-**Design Choice:** Use same vertical thrust keys as ship (Shift/Ctrl) for muscle memory consistency.
+### No New Components Needed
+- All changes within existing `PlayerCamera.cs`
+- Input binding via existing `InputReader.cs` pattern
 
 ---
 
 ## 4. Implementation Tasks
 
-### Phase 1: Camera Perspective Toggle
+### Phase 1: Input Setup
 
-#### Task 1.1: Create CameraPerspective Enum
+#### Task 1.1: Add ToggleCameraView Action
+- [ ] Add `ToggleCameraView` action to Player action map (V key)
+- [ ] Add `OnToggleCameraView` event to `InputReader.cs`
+- [ ] Wire up performed callback
+
+**Files Modified:**
+- `Assets/_Project/Resources/InputSystem_Actions.inputactions`
+- `Assets/_Project/Scripts/Player/InputReader.cs`
+
+---
+
+### Phase 2: Camera Perspective Toggle
+
+#### Task 2.1: Create CameraPerspective Enum
 - [ ] Define `CameraPerspective { ThirdPerson, FirstPerson }`
-- [ ] Add to PlayerCamera or new controller
+- [ ] Add `_currentPerspective` field to `PlayerCamera`
 
-#### Task 1.2: Extend PlayerCamera for First-Person
-- [ ] Add first-person position offset (at head height)
-- [ ] Add first-person rotation (match player facing)
-- [ ] Add perspective toggle method
-- [ ] Smooth transition between perspectives
+#### Task 2.2: Add First-Person Configuration
+- [ ] Add `_firstPersonOffset` field (default: 0, 1.6, 0)
+- [ ] Add `_perspectiveTransitionTime` field (default: 0.3s)
 
 ```csharp
 [Header("First Person")]
-[SerializeField] Vector3 _firstPersonOffset = new Vector3(0, 1.6f, 0);
-[SerializeField] float _perspectiveTransitionTime = 0.3f;
+[SerializeField] private Vector3 _firstPersonOffset = new Vector3(0f, 1.6f, 0f);
+[SerializeField] private float _perspectiveTransitionTime = 0.3f;
 ```
 
-#### Task 1.3: Player Model Visibility
-- [ ] Hide player mesh in first-person (except arms if present)
-- [ ] Show player mesh in third-person
-- [ ] Handle shadow casting (still cast in first-person?)
+#### Task 2.3: Implement Perspective Toggle
+- [ ] Add `TogglePerspective()` method
+- [ ] Smooth transition between offsets/distances
+- [ ] Handle Look input differently per perspective
 
-#### Task 1.4: Input Binding
-- [ ] Add `ToggleCameraView` action (V key)
-- [ ] Add `OnToggleCameraView` event to InputReader
-- [ ] Wire up in PlayerCamera
+#### Task 2.4: Wire Input to Toggle
+- [ ] Subscribe to `InputReader.OnToggleCameraView`
+- [ ] Call `TogglePerspective()` on event
 
 **Files Modified:**
 - `Assets/_Project/Scripts/Player/PlayerCamera.cs`
-- `Assets/_Project/Scripts/Player/InputReader.cs`
-- `Assets/_Project/Resources/InputSystem_Actions.json`
-- `Assets/Settings/InputSystem_Actions.inputactions`
 
 ---
 
-### Phase 2: Airborne Roll Control
+### Phase 3: First-Person Model Handling
 
-#### Task 2.1: Add Roll Input
-- [ ] Add `Roll` action (Q = -1, E = +1 axis)
-- [ ] Add `RollInput` property to InputReader
-
-#### Task 2.2: Create AirborneRotationController
-- [ ] Only active when `!IsGrounded` (from CharacterMotorSpherical)
-- [ ] Apply roll rotation around player's forward axis
-- [ ] Configurable roll speed
-- [ ] Smooth start/stop (not instant)
+#### Task 3.1: Player Model Visibility
+- [ ] Add reference to player model renderers
+- [ ] Create `SetPlayerModelVisibility(bool visible)` method
+- [ ] Hide mesh renderers but preserve shadow casting
 
 ```csharp
-[Header("Airborne Roll")]
-[SerializeField] float _rollSpeed = 90f; // degrees per second
-[SerializeField] float _rollAcceleration = 5f;
+[Header("Model Visibility")]
+[SerializeField] private Renderer[] _playerRenderers;
 ```
 
-#### Task 2.3: Integration with Gravity Alignment
-- [ ] When grounded: gravity controls up direction (existing)
-- [ ] When airborne: roll input modifies orientation
-- [ ] Smooth blend when landing (snap to gravity up)
+#### Task 3.2: Shadow-Only Mode
+- [ ] When hiding model, set `renderer.shadowCastingMode = ShadowsOnly`
+- [ ] When showing model, restore to `On`
 
-**Files Created:**
-- `Assets/_Project/Scripts/Player/AirborneRotationController.cs`
+#### Task 3.3: Integration
+- [ ] Call visibility toggle during perspective transition
+- [ ] Handle edge cases (boarding ship resets to third-person)
 
 **Files Modified:**
-- `Assets/_Project/Scripts/Player/InputReader.cs`
-- `Assets/_Project/Scripts/Player/CharacterMotorSpherical.cs`
-- Input System files
+- `Assets/_Project/Scripts/Player/PlayerCamera.cs`
+- `Assets/_Project/Scripts/Player/PlayerInitializer.cs` (if needed for renderer refs)
 
 ---
 
-### Phase 3: Jetpack Core
+### Phase 4: Remove Zero-G Thrust
 
-#### Task 3.1: Create JetpackController
-- [ ] Toggle on/off state (J key)
-- [ ] Thrust vector calculation from input
-- [ ] Apply force to Rigidbody
-- [ ] Configurable thrust power
-
-```csharp
-public class JetpackController : MonoBehaviour
-{
-    [Header("Thrust")]
-    [SerializeField] float _thrustPower = 15f;
-    
-    [Header("Control")]
-    [SerializeField] float _responsiveness = 5f; // How quickly thrust responds
-    
-    public bool IsActive { get; private set; }
-    public Vector3 CurrentThrust { get; private set; }
-    
-    public void SetActive(bool active);
-    public void SetThrustInput(Vector3 input); // x=strafe, y=vertical, z=forward
-}
-```
-
-#### Task 3.2: Add Jetpack Input Actions
-- [ ] `ToggleJetpack` → J key
-- [ ] Reuse `ShipVerticalInput` pattern → Shift (up) / Ctrl (down)
-- [ ] Reuse `Move` for horizontal thrust
-
-#### Task 3.3: Input Reader Updates
-- [ ] Add `OnToggleJetpack` event
-- [ ] Reuse or mirror `ShipVerticalInput` for jetpack vertical
-
-#### Task 3.4: Integrate with Movement
-- [ ] When jetpack active: movement input = thrust, not walk
-- [ ] Jetpack overrides gravity (or works against it)
-- [ ] Can use jetpack while grounded (hover/launch)
-
-**Files Created:**
-- `Assets/_Project/Scripts/Player/JetpackController.cs`
+#### Task 4.1: Remove HandleZeroGMovement
+- [ ] Delete zero-g thrust code from `CharacterMotorSpherical`
+- [ ] Player floats helplessly in zero-g (intentional design)
+- [ ] Keep grounding detection and gravity alignment
 
 **Files Modified:**
-- `Assets/_Project/Scripts/Player/InputReader.cs`
 - `Assets/_Project/Scripts/Player/CharacterMotorSpherical.cs`
-- Input System files
 
 ---
 
-### Phase 4: Fuel System
+### Phase 5: Polish & Testing
 
-#### Task 4.1: Create FuelSystem Component
-- [ ] Current fuel / max fuel
-- [ ] Consumption rate (per second while thrusting)
-- [ ] Regeneration rate (when grounded, optional)
+#### Task 5.1: Edge Cases
+- [ ] Test on curved surfaces (planet curvature)
+- [ ] Test during gravity transitions
+- [ ] Test perspective during ship boarding/exit
+- [ ] Verify camera collision in both perspectives
 
-```csharp
-public class FuelSystem : MonoBehaviour
-{
-    [Header("Capacity")]
-    [SerializeField] float _maxFuel = 100f;
-    [SerializeField] float _startingFuel = 100f;
-    
-    [Header("Consumption")]
-    [SerializeField] float _consumptionRate = 10f; // per second
-    
-    [Header("Regeneration")]
-    [SerializeField] bool _regenerateWhenGrounded = true;
-    [SerializeField] float _regenerationRate = 5f; // per second
-    [SerializeField] float _regenerationDelay = 1f; // seconds after last use
-    
-    public float CurrentFuel { get; }
-    public float MaxFuel { get; }
-    public float FuelPercent { get; }
-    public bool IsEmpty { get; }
-    
-    public bool TryConsume(float amount);
-    public void Refuel(float amount);
-}
-```
-
-#### Task 4.2: Wire Fuel to Jetpack
-- [ ] Jetpack checks fuel before thrusting
-- [ ] No fuel = no thrust (or weak emergency thrust?)
-
-#### Task 4.3: Fuel Pickups (Optional)
-- [ ] Create `FuelPickup` collectible
-- [ ] Refills portion of fuel
-- [ ] Visual/audio feedback
-
-**Files Created:**
-- `Assets/_Project/Scripts/Player/FuelSystem.cs`
-- `Assets/_Project/Scripts/Interaction/FuelPickup.cs` (optional)
-
----
-
-### Phase 5: Visual & Audio Feedback
-
-#### Task 5.1: Jetpack VFX
-- [ ] Thrust particles (directional based on thrust vector)
-- [ ] Intensity scales with thrust amount
-- [ ] Empty fuel = sputtering effect
-
-#### Task 5.2: Jetpack Audio
-- [ ] Thrust loop sound (pitch/volume by intensity)
-- [ ] Activate/deactivate sounds
-- [ ] Low fuel warning beep
-- [ ] Empty fuel sputter sound
-
-#### Task 5.3: Camera Perspective Audio
-- [ ] First-person: sounds more "inside helmet"
-- [ ] Third-person: more environmental
-- [ ] Optional: audio filter difference
-
-**Files Created:**
-- `Assets/_Project/Prefabs/VFX/P_JetpackThrust.prefab`
-- Audio files in `Assets/_Project/Audio/SFX/`
-
----
-
-### Phase 6: UI Integration
-
-#### Task 6.1: Fuel UI Panel
-- [ ] Create `FuelPanel` extending UIPanel (from M6) or standalone
-- [ ] Show fuel bar/percentage
-- [ ] Warning state when low
-- [ ] Only visible when jetpack equipped/active
-
-#### Task 6.2: Camera Mode Indicator
-- [ ] Small icon showing current perspective
-- [ ] Or: different HUD layouts per perspective
-
-#### Task 6.3: Jetpack State Indicator
-- [ ] Icon showing jetpack on/off
-- [ ] Or: fuel panel visibility implies active
-
-**Files Created:**
-- `Assets/_Project/Scripts/UI/Panels/FuelPanel.cs`
-- `Assets/_Project/Prefabs/UI/P_FuelPanel.prefab`
+#### Task 5.2: Feel Tuning
+- [ ] Adjust transition timing
+- [ ] Adjust first-person offset for different player scales
+- [ ] Test Look sensitivity in both modes
 
 ---
 
@@ -329,148 +181,77 @@ public class FuelSystem : MonoBehaviour
 | Action | Type | Binding | Notes |
 |--------|------|---------|-------|
 | ToggleCameraView | Button | V | Toggle 1st/3rd person |
-| Roll | Axis | Q (-1) / E (+1) | Airborne only |
-| ToggleJetpack | Button | J | On/off toggle |
-| ThrustVertical | Axis | Shift (+1) / Ctrl (-1) | Matches ship controls |
-
-### Modified Actions
-
-| Action | Change |
-|--------|--------|
-| Move | Also used for jetpack horizontal thrust |
-| ThrustVertical | Shared between Ship and Player maps (Shift/Ctrl) |
 
 ---
 
-## 6. State Interactions
-
-### Jetpack + Gravity (M3 Integration)
-```
-Gravity pulls player down
-    + Jetpack thrust up
-    = Net force determines movement
-
-In strong gravity: Jetpack fights to hover
-In weak gravity: Jetpack provides easy mobility
-In zero-g: Full 6DOF movement
-```
-
-### Jetpack + Ship
-- Jetpack disabled while in ship (InShip state)
-- Can jetpack immediately after exiting ship
-- Useful for zero-g ship repairs (future feature)
-
-### Camera + Boarding
-- Force third-person when boarding ship? Or allow first-person cockpit?
-- Recommendation: Third-person for ship (M2 camera), first-person option later
-
----
-
-## 7. Validation Checklist
+## 6. Validation Checklist
 
 ### Camera Perspective
 - [ ] V key toggles between perspectives
-- [ ] Smooth transition animation
+- [ ] Smooth transition animation (no snap)
 - [ ] Player model hidden in first-person
+- [ ] Player shadow still visible in first-person
 - [ ] Both perspectives work on curved surfaces
 - [ ] Camera collision works in both modes
+- [ ] Perspective resets to third-person on ship boarding
 
-### Airborne Roll
-- [ ] Q/E roll player when airborne
-- [ ] No roll input when grounded
-- [ ] Smooth blend when landing
-- [ ] Roll resets toward gravity when landing
-
-### Jetpack Core
-- [ ] J toggles jetpack on/off
-- [ ] WASD thrust horizontally (camera-relative)
-- [ ] Shift thrusts up, Ctrl thrusts down (matches ship)
-- [ ] Works in all gravity conditions
-
-### Fuel System
-- [ ] Fuel depletes while thrusting
-- [ ] No thrust when empty
-- [ ] Fuel regenerates when grounded (if enabled)
-- [ ] Pickups refill fuel (if implemented)
-
-### Visual/Audio
-- [ ] Thrust VFX matches direction
-- [ ] Audio loops appropriately
-- [ ] Low fuel warning plays
-- [ ] Feedback feels responsive
+### Zero-G Behavior
+- [ ] Player floats helplessly in zero-g zones (no thrust)
+- [ ] Gravity alignment still works when gravity resumes
+- [ ] Ship is only means of zero-g traversal
 
 ---
 
-## 8. File Checklist
-
-### Scripts to Create
-- [ ] `Assets/_Project/Scripts/Player/JetpackController.cs`
-- [ ] `Assets/_Project/Scripts/Player/FuelSystem.cs`
-- [ ] `Assets/_Project/Scripts/Player/AirborneRotationController.cs`
-- [ ] `Assets/_Project/Scripts/UI/Panels/FuelPanel.cs`
-- [ ] `Assets/_Project/Scripts/Interaction/FuelPickup.cs` (optional)
+## 7. File Checklist
 
 ### Scripts to Modify
 - [ ] `Assets/_Project/Scripts/Player/PlayerCamera.cs` - Add first-person mode
-- [ ] `Assets/_Project/Scripts/Player/InputReader.cs` - New events/properties
-- [ ] `Assets/_Project/Scripts/Player/CharacterMotorSpherical.cs` - Jetpack integration
-- [ ] `Assets/_Project/Scripts/Player/PlayerStateController.cs` - Jetpack state handling
+- [ ] `Assets/_Project/Scripts/Player/InputReader.cs` - Add ToggleCameraView event
+- [ ] `Assets/_Project/Scripts/Player/CharacterMotorSpherical.cs` - Remove zero-g thrust
 
 ### Input System
-- [ ] `Assets/_Project/Resources/InputSystem_Actions.json`
-- [ ] `Assets/Settings/InputSystem_Actions.inputactions`
+- [ ] `Assets/_Project/Resources/InputSystem_Actions.inputactions`
 
-### Prefabs to Create
-- [ ] `Assets/_Project/Prefabs/VFX/P_JetpackThrust.prefab`
-- [ ] `Assets/_Project/Prefabs/UI/P_FuelPanel.prefab`
-
-### Spec Updates
-- [ ] `specs/player-system.spec.md` - Add jetpack, camera modes, roll
+### No New Scripts Required
+Camera perspective is an extension of existing `PlayerCamera.cs`
 
 ---
 
-## 9. Dependencies & Risks
+## 8. Dependencies & Risks
 
 ### Dependencies
-- Milestone 1-2 complete ✅
-- Milestone 3 (Advanced Gravity) recommended but not required
-  - Zero-g zones make jetpack more valuable
-  - Can work with current single-source gravity
+- Milestone 1-3 complete ✅
+- Player model must have accessible renderers for visibility toggle
 
 ### Risks
 
 | Risk | Mitigation |
 |------|------------|
-| Jetpack feels floaty/uncontrolled | Tune responsiveness, add damping |
-| Fuel balance too restrictive/generous | Make all values designer-tunable |
 | First-person causes motion sickness | Add FOV options, limit rotation speed |
-| Control complexity overwhelming | Gradual unlock (jetpack found, not starting gear) |
-| Muscle memory confusion | Same Shift/Ctrl for vertical in ship and jetpack |
-| Jetpack trivializes exploration | Limit fuel, make refueling meaningful |
+| First-person offset wrong for player scale | Make offset configurable per-prefab |
+| Shadow-only mode not working in URP | Test early, fallback to layer-based hiding |
+| Camera collision too aggressive in FP | Use smaller collision sphere in first-person |
 
 ---
 
-## 10. Definition of Done
+## 9. Definition of Done
 
-- [ ] Camera toggles between first and third person smoothly
-- [ ] Player can roll when airborne (Q/E)
-- [ ] Jetpack provides full 6DOF movement
-- [ ] Fuel system limits jetpack usage appropriately
-- [ ] Visual and audio feedback feels polished
+- [ ] Camera toggles between first and third person smoothly (V key)
+- [ ] Player model hidden in first-person, shadow preserved
+- [ ] Transition is smooth (no instant snapping)
+- [ ] Zero-g thrust removed (player helpless in space)
 - [ ] All existing gameplay still works
-- [ ] UI shows fuel state clearly
-- [ ] Spec updated with new systems
+- [ ] Spec updated with camera perspective details
 - [ ] CHANGELOG updated
 
 ---
 
-## 11. Future Considerations (Out of Scope)
+## 10. Future Considerations (Out of Scope)
 
 | Feature | Notes |
 |---------|-------|
-| Jetpack upgrades | Increased capacity, efficiency, thrust |
-| Grappling hook | Alternative traversal, pairs with jetpack |
-| Magnetic boots | Walk on any surface, even vertical |
-| EVA tether | Safety line to ship in zero-g |
 | First-person arms | Visible hands/tools in first-person |
 | VR support | First-person mode is VR-ready foundation |
+| Jetpack system | Deferred, may revisit in future milestone |
+| Airborne roll | Deferred, may revisit if needed |
+| Camera mode UI indicator | Can add in M6 (UI Foundation) |

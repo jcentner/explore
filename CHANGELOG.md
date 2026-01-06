@@ -61,16 +61,25 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-### Milestone 4 Planning: Enhanced Camera & Movement Controls
+### Milestone 4 Planning: Camera Perspective Toggle
 
-#### Added
-- **Milestone 4 Plan** (`plans/milestone-4.plan.md`)
+#### Changed
+- **Revised Milestone 4 scope** - Simplified to camera toggle only
   - First-person / third-person camera toggle (V key)
-  - Airborne roll control (Q/E keys)
-  - Full jetpack system with 6DOF movement
-  - Fuel/energy management with regeneration
-  - Six implementation phases with task breakdowns
-  - Input mapping avoiding F key conflict (C for down thrust)
+  - Smooth perspective transitions
+  - First-person model hiding (shadows preserved)
+  - Remove player zero-g thrust (player helpless in space)
+  
+- **Removed from M4 scope** (deferred to future milestones)
+  - Jetpack system
+  - Airborne roll control (Q/E)
+  - Fuel management
+
+#### Updated Files
+- `plans/milestone-4.plan.md` - Revised with reduced scope
+- `design_doc.md` - Updated M4 description and Definition of Done
+- `ARCHITECTURE.md` - Updated controller description (no zero-g thrust)
+- `specs/player-system.spec.md` - Added camera perspective, zero-g behavior
 
 ---
 

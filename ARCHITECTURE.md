@@ -22,7 +22,7 @@ This document covers the technical implementation details for the Explore game. 
 
 ### 1.3 Controllers (Separate by Mode)
 
-* **On-foot controller:** Spherical gravity + grounding + zero-g thrust
+* **On-foot controller:** Spherical gravity + grounding (player helpless in zero-g)
 * **Ship controller:** 6DOF physics flight, optional gravity response
 
 > **Full details:** [specs/player-system.spec.md](specs/player-system.spec.md), [specs/ship-system.spec.md](specs/ship-system.spec.md)

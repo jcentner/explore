@@ -1,14 +1,14 @@
 # Player System Specification
 
-**Status: ✅ IMPLEMENTED (Milestones 1-2)**
+**Status: ✅ IMPLEMENTED (Milestones 1-3, M4 in progress)**
 
 ## Implementation Notes
 
 | Component | File | Status |
 |-----------|------|--------|
 | `CharacterMotorSpherical` | `Scripts/Player/CharacterMotorSpherical.cs` | ✅ Complete |
-| `PlayerCamera` | `Scripts/Player/PlayerCamera.cs` | ✅ Complete |
-| `InputReader` | `Scripts/Player/InputReader.cs` | ✅ Complete |
+| `PlayerCamera` | `Scripts/Player/PlayerCamera.cs` | 🔄 M4: Adding perspective toggle |
+| `InputReader` | `Scripts/Player/InputReader.cs` | 🔄 M4: Adding ToggleCameraView |
 | `PlayerInitializer` | `Scripts/Player/PlayerInitializer.cs` | ✅ Complete |
 | `PlayerStateController` | `Scripts/Player/PlayerStateController.cs` | ✅ Complete |
 | `PlayerState` | `Scripts/Player/PlayerState.cs` | ✅ Complete |
@@ -17,6 +17,7 @@
 ### Known Limitations
 - Camera collision avoidance fields exist but not fully utilized
 - No slope sliding logic
+- Player is helpless in zero-g (intentional design)
 
 ---
 
@@ -93,15 +94,28 @@ public event Action OnDisembarked; // Exited ship
 
 ### PlayerCamera : MonoBehaviour
 
-Third-person camera that handles spherical gravity orientation.
+Camera with perspective toggle (first-person / third-person) that handles spherical gravity orientation.
+
+**Camera Perspectives:**
+| Perspective | Position | Player Model | Use Case |
+|-------------|----------|--------------|----------|
+| Third-Person | Behind/above player | Visible | Navigation, awareness |
+| First-Person | At head height | Shadow-only | Detail examination, immersion |
 
 **Inspector Fields:**
 ```csharp
-[Header("Follow")]
+[Header("Follow (Third-Person)")]
 [SerializeField] Transform target;
 [SerializeField] float followDistance = 5f;
 [SerializeField] float followHeight = 2f;
 [SerializeField] float followSmoothing = 10f;
+
+[Header("First-Person")]
+[SerializeField] Vector3 _firstPersonOffset = new Vector3(0f, 1.6f, 0f);
+[SerializeField] float _perspectiveTransitionTime = 0.3f;
+
+[Header("Model Visibility")]
+[SerializeField] Renderer[] _playerRenderers;
 
 [Header("Look")]
 [SerializeField] float lookSensitivity = 2f;
@@ -114,9 +128,11 @@ Third-person camera that handles spherical gravity orientation.
 
 **Behavior:**
 - Camera "up" smoothly aligns to player's `LocalUp`
-- Horizontal rotation orbits around player
+- Horizontal rotation orbits around player (third-person) or rotates player (first-person)
 - Vertical rotation pitches within limits
 - No roll (prevents nausea)
+- V key toggles between perspectives with smooth transition
+- Player model hidden in first-person but shadow preserved
 
 ### InputReader : ScriptableObject
 
@@ -142,8 +158,9 @@ public bool ShipBoostHeld { get; }
 **Player Events:**
 ```csharp
 public event Action OnJump;
-public event Action OnInteract;      // Used for boarding/interactions
+public event Action OnInteract;           // Used for boarding/interactions
 public event Action OnPause;
+public event Action OnToggleCameraView;   // V key - perspective toggle
 ```
 
 **Ship Events:**
@@ -185,7 +202,15 @@ public void DisableAllInput();
 1. Reduced input influence (airControl multiplier)
 2. Gravity applied via GravitySolver
 3. No ground snapping
+4. No thrust control (player helpless in zero-g)
 ```
+
+### Zero-G Behavior
+
+Player is intentionally helpless in zero-g zones:
+- No thrust or movement control
+- Must use ship for zero-g traversal
+- Gravity alignment resumes when entering gravity field
 
 ### Up Alignment
 
@@ -223,6 +248,9 @@ Transitioning ─(arrive)───────▶ OnFoot
 3. **Landing on steep slope** – Slide down, don't snap to surface
 4. **Camera during fast rotation** – Smoothing prevents whip
 5. **Boarding ship while falling** – Allowed, snaps to ship interior
+6. **Zero-g zones** – Player floats helplessly, must use ship
+7. **Perspective toggle during transition** – Blocked until transition completes
+8. **Ship boarding in first-person** – Resets to third-person for ship camera
 
 ## Testing Checklist
 
@@ -233,6 +261,10 @@ Transitioning ─(arrive)───────▶ OnFoot
 - [x] State machine transitions work correctly
 - [x] Input is disabled during transitions (fade in/out)
 - [x] Boarding/disembarking works with fade transitions
+- [ ] V key toggles camera perspective (M4)
+- [ ] Smooth perspective transition (M4)
+- [ ] Player model hidden in first-person, shadow preserved (M4)
+- [ ] Player helpless in zero-g zones (M4)
 
 ## Performance Notes
 

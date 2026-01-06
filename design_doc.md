@@ -172,11 +172,11 @@ Assets/
 
 ---
 
-### Milestone 4: Enhanced Camera & Movement Controls
+### Milestone 4: Camera Perspective Toggle
 
 * First-person / third-person camera toggle (V key)
-* Airborne roll control (Q/E) - reorient when not grounded
-* Jetpack system with fuel management
+* Smooth perspective transitions
+* First-person model hiding (preserve shadows)
 
 ---
 
@@ -224,8 +224,7 @@ Assets/
 * Stable on-foot spherical gravity on one planet
 * Stable ship travel between two bodies
 * Realistic multi-body gravity with smooth transitions
-* First/third person camera with airborne rotation control
-* Jetpack for 6DOF player movement
+* First/third person camera toggle
 * Solar system lighting with correct illumination from any viewpoint
 * Reliable gate transition to a second scene
 * Objective can be completed end-to-end (15–30 minutes)

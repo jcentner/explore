@@ -22,7 +22,21 @@
 
 <!-- Ideas for new ways to move around, vehicles, gadgets -->
 
-- 
+- **Jetpack system** — 6DOF player thrust with fuel management (deferred from M4)
+  - Toggle on/off with dedicated key
+  - WASD horizontal thrust, Shift/Ctrl vertical
+  - Fuel depletes while thrusting, regenerates when grounded
+  - Would allow reaching otherwise inaccessible areas
+  - *Concern: May trivialize exploration — needs careful balance*
+
+- **Airborne roll control** — Q/E to reorient when not grounded (deferred from M4)
+  - Helps with landing approach angle
+  - Useful in zero-g for orientation
+  - Blends back to gravity-aligned on landing
+
+- **Grappling hook** — Alternative traversal, pairs well with jetpack
+- **Magnetic boots** — Walk on any surface, even vertical/upside-down
+- **EVA tether** — Safety line to ship in zero-g, auto-retracts 
 
 ---
 
