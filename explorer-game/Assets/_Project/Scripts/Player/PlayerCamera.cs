@@ -1,9 +1,19 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Explorer.Player
 {
     /// <summary>
-    /// Third-person camera that handles spherical gravity orientation.
+    /// Camera perspective modes.
+    /// </summary>
+    public enum CameraPerspective
+    {
+        ThirdPerson,
+        FirstPerson
+    }
+
+    /// <summary>
+    /// Camera with perspective toggle (first-person / third-person) that handles spherical gravity orientation.
     /// Smoothly aligns "up" to the player's LocalUp while allowing orbit controls.
     /// </summary>
     public class PlayerCamera : MonoBehaviour
@@ -18,9 +28,9 @@ namespace Explorer.Player
         [Tooltip("Offset from target position to look at.")]
         private Vector3 _targetOffset = new Vector3(0f, 1f, 0f);
 
-        [Header("Distance")]
+        [Header("Third-Person")]
         [SerializeField]
-        [Tooltip("Distance from target.")]
+        [Tooltip("Distance from target in third-person.")]
         private float _distance = 5f;
 
         [SerializeField]
@@ -30,6 +40,20 @@ namespace Explorer.Player
         [SerializeField]
         [Tooltip("Maximum distance (when zooming out).")]
         private float _maxDistance = 10f;
+
+        [Header("First-Person")]
+        [SerializeField]
+        [Tooltip("Offset from target position for first-person view (head height).")]
+        private Vector3 _firstPersonOffset = new Vector3(0f, 1.6f, 0f);
+
+        [SerializeField]
+        [Tooltip("Time to transition between perspectives.")]
+        private float _perspectiveTransitionTime = 0.3f;
+
+        [Header("Model Visibility")]
+        [SerializeField]
+        [Tooltip("Renderers to hide in first-person mode.")]
+        private Renderer[] _playerRenderers;
 
         [Header("Rotation")]
         [SerializeField]
@@ -86,11 +110,28 @@ namespace Explorer.Player
             set => _target = value;
         }
 
+        /// <summary>
+        /// The current camera perspective.
+        /// </summary>
+        public CameraPerspective CurrentPerspective => _currentPerspective;
+
+        /// <summary>
+        /// Whether the camera is currently transitioning between perspectives.
+        /// </summary>
+        public bool IsTransitioning => _transitionProgress < 1f;
+
         // === Private Fields ===
         private float _yaw;
         private float _pitch;
         private Vector3 _currentUp = Vector3.up;
         private CharacterMotorSpherical _motor;
+        private bool _subscribedToInput;
+
+        // Perspective transition
+        private CameraPerspective _currentPerspective = CameraPerspective.ThirdPerson;
+        private float _transitionProgress = 1f;
+        private float _currentDistance;
+        private Vector3 _currentOffset;
 
         // === Unity Lifecycle ===
         private void Start()
@@ -110,9 +151,33 @@ namespace Explorer.Player
                 _motor = _target.GetComponent<CharacterMotorSpherical>();
             }
 
+            // Initialize perspective state
+            _currentPerspective = CameraPerspective.ThirdPerson;
+            _transitionProgress = 1f;
+            _currentDistance = _distance;
+            _currentOffset = _targetOffset;
+            SetPlayerModelVisibility(true);
+
+            // Subscribe to input events (if assigned via Inspector, not SetInputReader)
+            // Note: SetInputReader handles its own subscription
+            if (_inputReader != null && !_subscribedToInput)
+            {
+                _inputReader.OnToggleCameraView += HandleToggleCameraView;
+                _subscribedToInput = true;
+            }
+
             // Lock cursor for mouse look
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+        }
+
+        private void OnDestroy()
+        {
+            // Unsubscribe from input events
+            if (_inputReader != null && _subscribedToInput)
+            {
+                _inputReader.OnToggleCameraView -= HandleToggleCameraView;
+            }
         }
 
         private void LateUpdate()
@@ -121,6 +186,7 @@ namespace Explorer.Player
                 return;
 
             HandleInput();
+            UpdatePerspectiveTransition();
             UpdateUpDirection();
             UpdateCameraPosition();
         }
@@ -141,7 +207,24 @@ namespace Explorer.Player
         /// </summary>
         public void SetInputReader(InputReader inputReader)
         {
+            // Unsubscribe from old input reader
+            if (_inputReader != null && _subscribedToInput)
+            {
+                _inputReader.OnToggleCameraView -= HandleToggleCameraView;
+            }
+
             _inputReader = inputReader;
+
+            // Subscribe to new input reader
+            if (_inputReader != null)
+            {
+                _inputReader.OnToggleCameraView += HandleToggleCameraView;
+                _subscribedToInput = true;
+            }
+            else
+            {
+                _subscribedToInput = false;
+            }
         }
 
         /// <summary>
@@ -153,7 +236,63 @@ namespace Explorer.Player
             _pitch = Mathf.Clamp(pitch, _minPitch, _maxPitch);
         }
 
+        /// <summary>
+        /// Toggle between first-person and third-person perspectives.
+        /// </summary>
+        public void TogglePerspective()
+        {
+            if (IsTransitioning)
+                return;
+
+            CameraPerspective newPerspective = _currentPerspective == CameraPerspective.ThirdPerson
+                ? CameraPerspective.FirstPerson
+                : CameraPerspective.ThirdPerson;
+
+            SetPerspective(newPerspective);
+        }
+
+        /// <summary>
+        /// Set a specific camera perspective.
+        /// </summary>
+        public void SetPerspective(CameraPerspective perspective)
+        {
+            if (perspective == _currentPerspective && _transitionProgress >= 1f)
+                return;
+
+            _currentPerspective = perspective;
+            _transitionProgress = 0f;
+
+            // Update model visibility
+            SetPlayerModelVisibility(perspective == CameraPerspective.ThirdPerson);
+        }
+
+        /// <summary>
+        /// Force reset to third-person (e.g., when boarding ship).
+        /// </summary>
+        public void ResetToThirdPerson()
+        {
+            _currentPerspective = CameraPerspective.ThirdPerson;
+            _transitionProgress = 1f;
+            _currentDistance = _distance;
+            _currentOffset = _targetOffset;
+            SetPlayerModelVisibility(true);
+        }
+
+        /// <summary>
+        /// Set player renderers for visibility toggling.
+        /// </summary>
+        public void SetPlayerRenderers(Renderer[] renderers)
+        {
+            _playerRenderers = renderers;
+        }
+
         // === Private Methods ===
+
+        private void HandleToggleCameraView()
+        {
+            Debug.Log("PlayerCamera: HandleToggleCameraView called");
+            TogglePerspective();
+        }
 
         private void HandleInput()
         {
@@ -168,6 +307,55 @@ namespace Explorer.Player
             _yaw += lookInput.x * _horizontalSensitivity;
             _pitch -= lookInput.y * _verticalSensitivity; // Inverted for natural feel
             _pitch = Mathf.Clamp(_pitch, _minPitch, _maxPitch);
+        }
+
+        private void UpdatePerspectiveTransition()
+        {
+            if (_transitionProgress >= 1f)
+                return;
+
+            // Progress the transition
+            _transitionProgress += Time.deltaTime / _perspectiveTransitionTime;
+            _transitionProgress = Mathf.Clamp01(_transitionProgress);
+
+            // Smooth easing
+            float t = Mathf.SmoothStep(0f, 1f, _transitionProgress);
+
+            // Interpolate distance and offset based on target perspective
+            if (_currentPerspective == CameraPerspective.FirstPerson)
+            {
+                _currentDistance = Mathf.Lerp(_distance, 0f, t);
+                _currentOffset = Vector3.Lerp(_targetOffset, _firstPersonOffset, t);
+            }
+            else
+            {
+                _currentDistance = Mathf.Lerp(0f, _distance, t);
+                _currentOffset = Vector3.Lerp(_firstPersonOffset, _targetOffset, t);
+            }
+        }
+
+        private void SetPlayerModelVisibility(bool visible)
+        {
+            if (_playerRenderers == null || _playerRenderers.Length == 0)
+                return;
+
+            foreach (var renderer in _playerRenderers)
+            {
+                if (renderer == null)
+                    continue;
+
+                if (visible)
+                {
+                    // Show model fully
+                    renderer.shadowCastingMode = ShadowCastingMode.On;
+                    renderer.enabled = true;
+                }
+                else
+                {
+                    // Shadow-only mode: cast shadows but don't render
+                    renderer.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+                }
+            }
         }
 
         private void UpdateUpDirection()
@@ -225,7 +413,7 @@ namespace Explorer.Player
         private void UpdateCameraPosition()
         {
             // Calculate target position (with offset in local space)
-            Vector3 targetPosition = _target.position + _target.TransformDirection(_targetOffset);
+            Vector3 targetPosition = _target.position + _target.TransformDirection(_currentOffset);
 
             // Build rotation relative to current up
             // Create a rotation basis where Y is our current up
@@ -237,23 +425,42 @@ namespace Explorer.Player
             
             Quaternion finalRotation = upRotation * yawRotation * pitchRotation;
 
-            // Calculate camera position
-            Vector3 offset = finalRotation * new Vector3(0f, 0f, -_distance);
-            Vector3 desiredPosition = targetPosition + offset;
-
-            // Check for collision
-            float adjustedDistance = CheckCollision(targetPosition, desiredPosition);
-            if (adjustedDistance < _distance)
+            // Calculate camera position based on current distance
+            Vector3 desiredPosition;
+            if (_currentDistance > 0.01f)
             {
-                offset = finalRotation * new Vector3(0f, 0f, -adjustedDistance);
+                // Third-person: behind the target
+                Vector3 offset = finalRotation * new Vector3(0f, 0f, -_currentDistance);
                 desiredPosition = targetPosition + offset;
+
+                // Check for collision
+                float adjustedDistance = CheckCollision(targetPosition, desiredPosition);
+                if (adjustedDistance < _currentDistance)
+                {
+                    offset = finalRotation * new Vector3(0f, 0f, -adjustedDistance);
+                    desiredPosition = targetPosition + offset;
+                }
+            }
+            else
+            {
+                // First-person: at the target position
+                desiredPosition = targetPosition;
             }
 
             // Apply position with smoothing
             transform.position = Vector3.Lerp(transform.position, desiredPosition, _followSmoothing * Time.deltaTime);
 
-            // Look at target
-            transform.LookAt(targetPosition, _currentUp);
+            // Look direction
+            if (_currentDistance > 0.01f)
+            {
+                // Third-person: look at target
+                transform.LookAt(targetPosition, _currentUp);
+            }
+            else
+            {
+                // First-person: look in player's forward direction based on yaw/pitch
+                transform.rotation = finalRotation;
+            }
         }
 
         private float CheckCollision(Vector3 from, Vector3 to)

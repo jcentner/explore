@@ -66,19 +66,6 @@ namespace Explorer.Player
         [Tooltip("Maximum rotation speed for alignment to prevent disorientation (degrees/second).")]
         private float _maxAlignmentSpeed = 360f;
 
-        [Header("Zero-G")]
-        [SerializeField]
-        [Tooltip("Movement thrust in zero-g (m/s²).")]
-        private float _zeroGThrust = 3f;
-
-        [SerializeField]
-        [Tooltip("Drag applied in zero-g to slow down.")]
-        private float _zeroGDrag = 0.5f;
-
-        [SerializeField]
-        [Tooltip("Rotation speed in zero-g (degrees/second).")]
-        private float _zeroGRotationSpeed = 60f;
-
         [Header("Input")]
         [SerializeField]
         [Tooltip("InputReader ScriptableObject for receiving input.")]
@@ -132,8 +119,6 @@ namespace Explorer.Player
         private Vector3 _horizontalVelocity;
         private float _lastJumpTime;
         private bool _jumpRequested;
-        private bool _wasInZeroG;
-
         private Transform _cameraTransform;
 
         // === Unity Lifecycle ===
@@ -194,12 +179,9 @@ namespace Explorer.Player
 
         private void FixedUpdate()
         {
-            if (IsInZeroG)
-            {
-                HandleZeroGMovement();
-                HandleZeroGRotation();
-            }
-            else
+            // In zero-g, player is helpless (no movement control)
+            // They can only drift and wait for gravity or use their ship
+            if (!IsInZeroG)
             {
                 CheckGrounded();
                 ApplyGravity();
@@ -401,8 +383,8 @@ namespace Explorer.Player
             _horizontalVelocity = Vector3.zero;
             IsGrounded = false;
 
-            // Apply drag to rigidbody for zero-g
-            _rb.linearDamping = _zeroGDrag;
+            // Player is helpless in zero-g - add slight drag so they don't drift forever
+            _rb.linearDamping = 0.1f;
 
             OnZeroGEntered?.Invoke();
         }
@@ -413,62 +395,6 @@ namespace Explorer.Player
             _rb.linearDamping = 0f;
 
             OnZeroGExited?.Invoke();
-        }
-
-        private void HandleZeroGMovement()
-        {
-            if (_moveInput.sqrMagnitude < 0.01f)
-                return;
-
-            // Get thrust direction relative to camera
-            Vector3 thrustDirection = GetZeroGMoveDirection();
-
-            // Apply thrust as force
-            _rb.AddForce(thrustDirection * _zeroGThrust, ForceMode.Acceleration);
-        }
-
-        private void HandleZeroGRotation()
-        {
-            // In zero-g, player can freely rotate using look input
-            // This is a preview of M4 jetpack behavior
-            if (_cameraTransform == null)
-            {
-                _cameraTransform = Camera.main?.transform;
-                if (_cameraTransform == null)
-                    return;
-            }
-
-            // Slowly align to camera's up direction for stability
-            // (Player will naturally orient to match camera view)
-            Vector3 targetUp = _cameraTransform.up;
-            float angleDiff = Vector3.Angle(transform.up, targetUp);
-
-            if (angleDiff > 1f)
-            {
-                float rotationThisFrame = _zeroGRotationSpeed * Time.fixedDeltaTime;
-                float blendT = Mathf.Clamp01(rotationThisFrame / angleDiff);
-
-                Quaternion targetRotation = Quaternion.FromToRotation(transform.up, targetUp) * transform.rotation;
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, blendT);
-            }
-        }
-
-        private Vector3 GetZeroGMoveDirection()
-        {
-            if (_cameraTransform == null)
-            {
-                _cameraTransform = Camera.main?.transform;
-                if (_cameraTransform == null)
-                    return transform.forward * _moveInput.y + transform.right * _moveInput.x;
-            }
-
-            // In zero-g, use camera directions directly (no projection to plane)
-            Vector3 cameraForward = _cameraTransform.forward;
-            Vector3 cameraRight = _cameraTransform.right;
-
-            // Combine into move direction
-            Vector3 moveDirection = (cameraForward * _moveInput.y + cameraRight * _moveInput.x).normalized;
-            return moveDirection;
         }
 
         // === Editor ===

@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 782494a8101ef1d4182e22cfde393efa, type: 3}
   m_Name: InputReader
   m_EditorClassIdentifier: Game.Player::Explorer.Player.InputReader
-  _inputActions: {fileID: 0}
+  _inputActions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   _playerMapName: Player

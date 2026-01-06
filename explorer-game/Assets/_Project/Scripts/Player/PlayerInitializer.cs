@@ -13,6 +13,15 @@ namespace Explorer.Player
         [SerializeField] private PlayerCamera _playerCamera;
         [SerializeField] private Transform _cameraTarget;
 
+        [Header("Model Visibility")]
+        [SerializeField]
+        [Tooltip("Renderers to hide in first-person mode. If empty, will auto-find in children.")]
+        private Renderer[] _playerRenderers;
+
+        [SerializeField]
+        [Tooltip("Auto-find renderers in children if array is empty.")]
+        private bool _autoFindRenderers = true;
+
         private CharacterMotorSpherical _motor;
 
         private void Awake()
@@ -23,12 +32,20 @@ namespace Explorer.Player
             if (_inputReader == null)
             {
                 _inputReader = Resources.Load<InputReader>("InputReader");
+                Debug.Log($"PlayerInitializer: Loaded InputReader from Resources: {_inputReader != null}");
             }
 
             // Wire up motor
             if (_motor != null && _inputReader != null)
             {
                 _motor.SetInputReader(_inputReader);
+                Debug.Log("PlayerInitializer: Wired up motor");
+            }
+
+            // Auto-find renderers if needed
+            if (_autoFindRenderers && (_playerRenderers == null || _playerRenderers.Length == 0))
+            {
+                _playerRenderers = GetComponentsInChildren<Renderer>();
             }
 
             // Wire up camera
@@ -41,6 +58,12 @@ namespace Explorer.Player
 
                 Transform target = _cameraTarget != null ? _cameraTarget : transform;
                 _playerCamera.SetTarget(target);
+
+                // Set up renderers for first-person visibility toggle
+                if (_playerRenderers != null && _playerRenderers.Length > 0)
+                {
+                    _playerCamera.SetPlayerRenderers(_playerRenderers);
+                }
             }
 
             // Enable input

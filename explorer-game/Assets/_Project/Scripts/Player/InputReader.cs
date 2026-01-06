@@ -25,6 +25,7 @@ namespace Explorer.Player
         private InputAction _jumpAction;
         private InputAction _sprintAction;
         private InputAction _interactAction;
+        private InputAction _toggleCameraViewAction;
 
         // === Cached Ship Actions ===
         private InputAction _shipThrustAction;
@@ -101,6 +102,11 @@ namespace Explorer.Player
         /// </summary>
         public event Action OnPause;
 
+        /// <summary>
+        /// Fired when camera view toggle is pressed (V key).
+        /// </summary>
+        public event Action OnToggleCameraView;
+
         // === Ship Events ===
         
         /// <summary>
@@ -129,6 +135,7 @@ namespace Explorer.Player
             _jumpAction = null;
             _sprintAction = null;
             _interactAction = null;
+            _toggleCameraViewAction = null;
             _shipThrustAction = null;
             _shipVerticalAction = null;
             _shipLookAction = null;
@@ -191,6 +198,9 @@ namespace Explorer.Player
             _jumpAction = playerMap.FindAction("Jump");
             _sprintAction = playerMap.FindAction("Sprint");
             _interactAction = playerMap.FindAction("Interact");
+            _toggleCameraViewAction = playerMap.FindAction("ToggleCameraView");
+
+            Debug.Log($"InputReader: ToggleCameraView action found: {_toggleCameraViewAction != null}");
 
             if (_moveAction != null)
             {
@@ -218,6 +228,11 @@ namespace Explorer.Player
             if (_interactAction != null)
             {
                 _interactAction.performed += OnInteractPerformed;
+            }
+
+            if (_toggleCameraViewAction != null)
+            {
+                _toggleCameraViewAction.performed += OnToggleCameraViewPerformed;
             }
 
             playerMap.Enable();
@@ -260,6 +275,11 @@ namespace Explorer.Player
             if (_interactAction != null)
             {
                 _interactAction.performed -= OnInteractPerformed;
+            }
+
+            if (_toggleCameraViewAction != null)
+            {
+                _toggleCameraViewAction.performed -= OnToggleCameraViewPerformed;
             }
 
             var playerMap = _inputActions?.FindActionMap(_playerMapName);
@@ -460,6 +480,12 @@ namespace Explorer.Player
         private void OnInteractPerformed(InputAction.CallbackContext context)
         {
             OnInteract?.Invoke();
+        }
+
+        private void OnToggleCameraViewPerformed(InputAction.CallbackContext context)
+        {
+            Debug.Log("InputReader: ToggleCameraView pressed");
+            OnToggleCameraView?.Invoke();
         }
 
         // === Ship Input Callbacks ===

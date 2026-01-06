@@ -78,28 +78,29 @@ Player Action Map (additions)
 
 ## 4. Implementation Tasks
 
-### Phase 1: Input Setup
+### Phase 1: Input Setup ✅
 
 #### Task 1.1: Add ToggleCameraView Action
-- [ ] Add `ToggleCameraView` action to Player action map (V key)
-- [ ] Add `OnToggleCameraView` event to `InputReader.cs`
-- [ ] Wire up performed callback
+- [x] Add `ToggleCameraView` action to Player action map (V key)
+- [x] Add `OnToggleCameraView` event to `InputReader.cs`
+- [x] Wire up performed callback
 
 **Files Modified:**
 - `Assets/_Project/Resources/InputSystem_Actions.inputactions`
+- `Assets/Settings/InputSystem_Actions.inputactions`
 - `Assets/_Project/Scripts/Player/InputReader.cs`
 
 ---
 
-### Phase 2: Camera Perspective Toggle
+### Phase 2: Camera Perspective Toggle ✅
 
 #### Task 2.1: Create CameraPerspective Enum
-- [ ] Define `CameraPerspective { ThirdPerson, FirstPerson }`
-- [ ] Add `_currentPerspective` field to `PlayerCamera`
+- [x] Define `CameraPerspective { ThirdPerson, FirstPerson }`
+- [x] Add `_currentPerspective` field to `PlayerCamera`
 
 #### Task 2.2: Add First-Person Configuration
-- [ ] Add `_firstPersonOffset` field (default: 0, 1.6, 0)
-- [ ] Add `_perspectiveTransitionTime` field (default: 0.3s)
+- [x] Add `_firstPersonOffset` field (default: 0, 1.6, 0)
+- [x] Add `_perspectiveTransitionTime` field (default: 0.3s)
 
 ```csharp
 [Header("First Person")]
@@ -108,25 +109,25 @@ Player Action Map (additions)
 ```
 
 #### Task 2.3: Implement Perspective Toggle
-- [ ] Add `TogglePerspective()` method
-- [ ] Smooth transition between offsets/distances
-- [ ] Handle Look input differently per perspective
+- [x] Add `TogglePerspective()` method
+- [x] Smooth transition between offsets/distances
+- [x] Handle Look input differently per perspective
 
 #### Task 2.4: Wire Input to Toggle
-- [ ] Subscribe to `InputReader.OnToggleCameraView`
-- [ ] Call `TogglePerspective()` on event
+- [x] Subscribe to `InputReader.OnToggleCameraView`
+- [x] Call `TogglePerspective()` on event
 
 **Files Modified:**
 - `Assets/_Project/Scripts/Player/PlayerCamera.cs`
 
 ---
 
-### Phase 3: First-Person Model Handling
+### Phase 3: First-Person Model Handling ✅
 
 #### Task 3.1: Player Model Visibility
-- [ ] Add reference to player model renderers
-- [ ] Create `SetPlayerModelVisibility(bool visible)` method
-- [ ] Hide mesh renderers but preserve shadow casting
+- [x] Add reference to player model renderers
+- [x] Create `SetPlayerModelVisibility(bool visible)` method
+- [x] Hide mesh renderers but preserve shadow casting
 
 ```csharp
 [Header("Model Visibility")]
@@ -134,25 +135,28 @@ Player Action Map (additions)
 ```
 
 #### Task 3.2: Shadow-Only Mode
-- [ ] When hiding model, set `renderer.shadowCastingMode = ShadowsOnly`
-- [ ] When showing model, restore to `On`
+- [x] When hiding model, set `renderer.shadowCastingMode = ShadowsOnly`
+- [x] When showing model, restore to `On`
 
 #### Task 3.3: Integration
-- [ ] Call visibility toggle during perspective transition
-- [ ] Handle edge cases (boarding ship resets to third-person)
+- [x] Call visibility toggle during perspective transition
+- [x] Added `ResetToThirdPerson()` for ship boarding edge case
+- [x] Auto-find renderers in PlayerInitializer if not assigned
 
 **Files Modified:**
 - `Assets/_Project/Scripts/Player/PlayerCamera.cs`
-- `Assets/_Project/Scripts/Player/PlayerInitializer.cs` (if needed for renderer refs)
+- `Assets/_Project/Scripts/Player/PlayerInitializer.cs`
 
 ---
 
-### Phase 4: Remove Zero-G Thrust
+### Phase 4: Remove Zero-G Thrust ✅
 
 #### Task 4.1: Remove HandleZeroGMovement
-- [ ] Delete zero-g thrust code from `CharacterMotorSpherical`
-- [ ] Player floats helplessly in zero-g (intentional design)
-- [ ] Keep grounding detection and gravity alignment
+- [x] Delete zero-g thrust code from `CharacterMotorSpherical`
+- [x] Player floats helplessly in zero-g (intentional design)
+- [x] Keep grounding detection and gravity alignment
+- [x] Keep IsInZeroG property and events (used by UI)
+- [x] Keep slight drag (0.1) so player doesn't drift forever
 
 **Files Modified:**
 - `Assets/_Project/Scripts/Player/CharacterMotorSpherical.cs`
@@ -171,6 +175,8 @@ Player Action Map (additions)
 - [ ] Adjust transition timing
 - [ ] Adjust first-person offset for different player scales
 - [ ] Test Look sensitivity in both modes
+
+**Status:** Ready for testing
 
 ---
 

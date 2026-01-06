@@ -6,141 +6,36 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Milestone 4: Camera Perspective Toggle ✅
+
+- First-person / third-person camera toggle (V key)
+- Smooth perspective transitions with model hiding (shadows preserved)
+- Player helpless in zero-g (removed thrust controls, floats with physics only)
+
+---
+
 ### Milestone 3: Advanced Gravity System ✅
 
-#### Added
-- **Multi-body gravity accumulation**
-  - `GravityManager.GetAccumulatedGravity()` sums contributions from all sources
-  - Inverse-square falloff: `g = g₀ × (r₀² / r²)`
-  - `GravityContribution` struct for debugging/UI
-  
-- **Smooth orientation transitions**
-  - `GravitySolver` smoothly blends orientation (90°/s default)
-  - `CharacterMotorSpherical` and `PlayerCamera` use degrees/second with rate limiting
-  - Proper 180° flip handling with consistent rotation axis
-  
-- **Emergent Lagrange points**
-  - Gravity below threshold (0.25 m/s²) clamped to zero automatically
-  - Zero-g zones emerge naturally where gravity sources cancel out
-  - No explicit zone objects needed
-  
-- **Player zero-g behavior**
-  - Thrust-based movement (WASD + Space/C) when floating
-  - Rigidbody drag for natural slowdown
-  - Slow rotation alignment to camera up for stability
-  
-- **Gravity UI indicator**
-  - Arrow shows combined gravity direction relative to camera
-  - Scale/color indicates magnitude (magenta→yellow→white)
-  - "ZERO-G" pulsing text when floating
-  - Works correctly in both player and ship views
-  
-- **Debug panel (F3)**
-  - Position, velocity, gravity magnitude/direction
-  - Contributors breakdown with percentages
-  - Solver settings display
-
-- **Service locator pattern**
-  - `IPlayerPilotingState` interface in `Explorer.Core`
-  - `PlayerPilotingService` for decoupled ship state access
-  - Avoids circular assembly dependencies
-
-#### Changed
-- `IGravitySource` extended with `Mass`, `SurfaceRadius`, `Mode` properties
-- `GravityBody` uses inverse-square falloff with surface clamping
-- `GravitySolver` queries accumulated gravity instead of single source
-- Gizmos show inverse-square contours (50%, 25%, 10%)
-
-#### Files Created
-- `Assets/_Project/Scripts/Gravity/GravityPreset.cs`
-- `Assets/_Project/Scripts/Gravity/GravityStableZone.cs` (optional visual marker)
-- `Assets/_Project/Scripts/Gravity/GravityDebugPanel.cs`
-- `Assets/_Project/Scripts/UI/Panels/GravityIndicatorPanel.cs`
-- `Assets/_Project/Scripts/Core/IPlayerPilotingState.cs`
-- `Assets/_Project/Materials/M_Planet_B.mat`
+- Multi-body gravity accumulation with inverse-square falloff
+- Smooth orientation transitions (90°/s blending)
+- Emergent Lagrange points (gravity cancellation zones)
+- Gravity UI indicator + F3 debug panel
+- Service locator pattern for decoupled architecture
 
 ---
 
-### Milestone 4 Planning: Camera Perspective Toggle
+### Milestone 6 Planning
 
-#### Changed
-- **Revised Milestone 4 scope** - Simplified to camera toggle only
-  - First-person / third-person camera toggle (V key)
-  - Smooth perspective transitions
-  - First-person model hiding (shadows preserved)
-  - Remove player zero-g thrust (player helpless in space)
-  
-- **Removed from M4 scope** (deferred to future milestones)
-  - Jetpack system
-  - Airborne roll control (Q/E)
-  - Fuel management
-
-#### Updated Files
-- `plans/milestone-4.plan.md` - Revised with reduced scope
-- `design_doc.md` - Updated M4 description and Definition of Done
-- `ARCHITECTURE.md` - Updated controller description (no zero-g thrust)
-- `specs/player-system.spec.md` - Added camera perspective, zero-g behavior
+- Created UI framework plan and specification
+- Renumbered milestones (UI before Gate Transition)
 
 ---
 
-### Milestone 6 Planning: UI Foundation
+### Code Quality Improvements
 
-#### Added
-- **Milestone 6 Plan** (`plans/milestone-6.plan.md`)
-  - Comprehensive UI framework architecture
-  - UIManager, UIScreen, UIPanel base classes
-  - UIService replacing InteractionPromptService
-  - Pause menu and settings screen design
-  - HUD panels (velocity, ship status, interaction prompts)
-  - Five implementation phases with task breakdowns
-
-- **UI System Specification** (`specs/ui-system.spec.md`)
-  - Architecture and component hierarchy
-  - Input integration with action maps
-  - Visual standards (typography, colors, layout)
-  - Performance guidelines
-  - Testing scenarios
-
-#### Changed
-- **Renumbered milestones in design_doc.md**
-  - New Milestone 6: UI Foundation
-  - Gate Transition moved to Milestone 7
-  - Vertical Slice moved to Milestone 8
-
----
-
-### Code Quality & Architecture Improvements
-
-#### Changed
-- **Decoupled Ship from UI assembly** - Removed `Game.UI` dependency from `Game.Ship.asmdef`
-  - Created `IInteractionPrompt` interface in `Explorer.Core`
-  - Created `InteractionPromptService` static service locator
-  - `BoardingPrompt` now implements `IInteractionPrompt` and auto-registers
-  - `ShipBoardingTrigger` uses `InteractionPromptService` instead of direct `BoardingPrompt` reference
-
-- **Fixed hardcoded F key** - `ShipBoardingTrigger` now routes through `InputReader` events
-  - Uses `OnInteract` event (Player map) for boarding when in range
-  - Uses `OnShipExit` event (Ship map) for disembarking when piloting
-  - Supports future rebinding without code changes
-
-- **Replaced magic strings with constants**
-  - Created `Tags.cs` in `Explorer.Core` with `PLAYER`, `MAIN_CAMERA`, `GROUND`, `INTERACTABLE`
-  - Created `Layers.cs` with layer indices and pre-computed layer masks
-  - Updated `ShipBoardingTrigger` to use `Tags.PLAYER`
-
-#### Added
-- **Validation attributes on ShipController**
-  - `[Range(0f, 2f)]` on `_gravityMultiplier` to prevent invalid values
-  - `[Range(0.1f, 5f)]` on `_landedVelocityThreshold`
-
-#### Fixed
-- **Scene cleanup**
-  - Added explicit `GravityManager` GameObject (was auto-creating at runtime)
-  - Parented `ShipCamera` to `Ship_Prototype` for logical hierarchy
-
-#### Documentation
-- Updated `player-system.spec.md` - Marked `PlayerStateController` and related components as implemented
-- Updated `ship-system.spec.md` - Added "Deferred Features" table, clarified implementation status
+- Decoupled Ship from UI assembly via service locator
+- Replaced magic strings with Tags/Layers constants
+- Fixed hardcoded input keys to use InputReader events
 
 ---
 
@@ -148,47 +43,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Milestone 2: Ship Prototype + Planet-to-Space Loop ✅
 
-#### Added
-- **Ship Flight System**
-  - `ShipController.cs` - 6DOF physics flight with direct angular velocity control
-  - `ShipInput.cs` - Bridges InputReader to ShipController, implements `IPilotable`
-  - `ShipCamera.cs` - Follow camera with configurable offset and smoothing
-  - Ship action map in InputSystem_Actions (WASD thrust, mouse look, Q/E roll, Space brake, Tab boost)
-
-- **Player State Machine**
-  - `PlayerState.cs` - Enum: OnFoot, BoardingShip, InShip, DisembarkingShip
-  - `PlayerStateController.cs` - Central state controller with fade transitions
-  - `IPilotable.cs` - Interface for pilotable vehicles (avoids circular deps)
-
-- **Boarding System**
-  - `ShipBoardingTrigger.cs` - SphereCollider trigger, F to board/disembark
-  - `BoardingPrompt.cs` - Auto-creating UI singleton for interaction prompts
-  - `InteractionPromptUI.cs` - Generic prompt component with fade animation
-  - Safe exit positioning via ground raycast
-
-- **Landing Detection**
-  - `ShipController.IsLanded` - True when grounded AND velocity < 0.5 m/s
-  - `OnLanded`/`OnTakeoff` events for future UI/audio hooks
-
-- **Physics Materials**
-  - `PM_ShipHull.physicMaterial` - Friction for landed ship stability
-
-#### Technical Notes
-- **Unity 6 Input System**: Must use `Keyboard.current.fKey.wasPressedThisFrame`, not old `Input.GetKeyDown`
-- **InputActionAsset loading**: `.inputactions` files don't load as InputActionAsset via Resources; use `.json` TextAsset + `InputActionAsset.FromJson()`
-- **Assembly dependencies**: Used `IPilotable` interface to avoid circular reference between Game.Player and Game.Ship
-- **Ship rotation**: Direct angular velocity control (`rb.angularVelocity = desired`) is smoother than accumulated target rotation
-
-#### Ship Controls
-| Input | Action |
-|-------|--------|
-| WASD | Thrust (strafe/forward) |
-| Ctrl/Shift | Vertical thrust |
-| Mouse | Pitch/Yaw |
-| Q/E | Roll |
-| Space | Brake |
-| Tab | Boost |
-| F | Board/Disembark |
+- 6DOF ship flight with physics (thrust, roll, brake, boost)
+- Player state machine (OnFoot ↔ InShip with fade transitions)
+- Boarding system with trigger zones and UI prompts
+- Landing detection with ground stability
 
 ---
 
@@ -196,51 +54,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Milestone 1: Core Gravity + On-foot Prototype ✅
 
-#### Added
-- **Core Interfaces** - `IGravitySource`, `IGravityAffected`
-- **Gravity System** - `GravityManager`, `GravityBody`, `GravitySolver`
-- **Player System** - `CharacterMotorSpherical`, `PlayerCamera`, `InputReader`, `PlayerInitializer`
-- **Scene** - TestGravity with Planet_Test, Player, Asteroid_Test
+- Spherical gravity system (GravityManager, GravityBody, GravitySolver)
+- On-foot controller with up-alignment (CharacterMotorSpherical)
+- Camera follows player with gravity-aligned orientation
+- Test scene with walkable planet and asteroid
 
-#### Technical Notes
-- Linear gravity falloff: `strength = baseStrength * (1 - distance/maxRange)`
-- Priority + distance tiebreaker for gravity source selection
-- Camera aligns up vector smoothly to player's gravity direction
+---
 
 ## [0.1.0] - 2026-01-03
 
-### Milestone 0: Tooling + URP Baseline ✅ COMPLETE
+### Milestone 0: Tooling + URP Baseline ✅
 
-### Added
-- **Project Structure**
-  - Folder conventions under `Assets/_Project/`
-  - Assembly Definitions for all script folders (Game.Core, Game.Gravity, etc.)
-  - Moved InputSystem_Actions to `Assets/Settings/`
-
-- **Documentation**
-  - `design_doc.md` with full architecture, milestones, conventions
-  - `specs/gravity-system.spec.md` - Gravity interfaces and components
-  - `specs/player-system.spec.md` - Character controller and camera
-  - `specs/ship-system.spec.md` - Flight model and boarding
-  - `Assets/_Project/Scripts/README.md` - Code conventions quick reference
-  - `.github/copilot-instructions.md` - AI assistant context
-
-- **Test Scene (TestGravity.unity)**
-  - Planet_Test sphere (scale 100, brownish-gray material)
-  - Directional light with angled sun (50, -30, 0)
-  - Camera at (0, 0, -150) with post-processing enabled
-  - Dark space background color
-  - GlobalPostProcessing volume with stylized grade
-
-- **URP Setup**
-  - Volume Profile `VP_GlobalPost` with Tonemapping, Bloom, Vignette
-  - Material `M_Planet_Test` using URP/Lit shader
-  - Asset Serialization set to Force Text
-
-### Learned (Unity 6 / URP Notes)
-- Volume Profiles created via: Add (+) → **Rendering** → Volume Profile
-- URP cameras have post-processing disabled by default
-- Must set `UniversalAdditionalCameraData.renderPostProcessing = true`
-- Base color property is `_BaseColor`, not `_Color`
+- Project structure with assembly definitions
+- URP setup with post-processing volume
+- Test scene with planet sphere and directional lighting
+- Documentation (design_doc, specs, copilot-instructions)
 
 
