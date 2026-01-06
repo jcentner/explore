@@ -200,8 +200,6 @@ namespace Explorer.Player
             _interactAction = playerMap.FindAction("Interact");
             _toggleCameraViewAction = playerMap.FindAction("ToggleCameraView");
 
-            Debug.Log($"InputReader: ToggleCameraView action found: {_toggleCameraViewAction != null}");
-
             if (_moveAction != null)
             {
                 _moveAction.performed += OnMovePerformed;
@@ -484,7 +482,6 @@ namespace Explorer.Player
 
         private void OnToggleCameraViewPerformed(InputAction.CallbackContext context)
         {
-            Debug.Log("InputReader: ToggleCameraView pressed");
             OnToggleCameraView?.Invoke();
         }
 

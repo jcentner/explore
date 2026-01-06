@@ -1,6 +1,6 @@
 # Milestone 4: Camera Perspective Toggle
 
-**Status:** 🔲 Not Started  
+**Status:** ✅ Complete  
 **Goal:** Add first-person / third-person camera toggle for flexible exploration views.
 
 ## 1. Context & Problem Statement
@@ -193,18 +193,18 @@ Player Action Map (additions)
 ## 6. Validation Checklist
 
 ### Camera Perspective
-- [ ] V key toggles between perspectives
-- [ ] Smooth transition animation (no snap)
-- [ ] Player model hidden in first-person
-- [ ] Player shadow still visible in first-person
-- [ ] Both perspectives work on curved surfaces
-- [ ] Camera collision works in both modes
-- [ ] Perspective resets to third-person on ship boarding
+- [x] V key toggles between perspectives
+- [x] Smooth transition animation (no snap)
+- [x] Player model hidden in first-person
+- [x] Player shadow still visible in first-person
+- [x] Both perspectives work on curved surfaces
+- [x] Camera collision works in both modes
+- [x] Perspective resets to third-person on ship boarding
 
 ### Zero-G Behavior
-- [ ] Player floats helplessly in zero-g zones (no thrust)
-- [ ] Gravity alignment still works when gravity resumes
-- [ ] Ship is only means of zero-g traversal
+- [x] Player floats helplessly in zero-g zones (no thrust)
+- [x] Gravity alignment still works when gravity resumes
+- [x] Ship is only means of zero-g traversal
 
 ---
 
@@ -242,13 +242,13 @@ Camera perspective is an extension of existing `PlayerCamera.cs`
 
 ## 9. Definition of Done
 
-- [ ] Camera toggles between first and third person smoothly (V key)
-- [ ] Player model hidden in first-person, shadow preserved
-- [ ] Transition is smooth (no instant snapping)
-- [ ] Zero-g thrust removed (player helpless in space)
-- [ ] All existing gameplay still works
-- [ ] Spec updated with camera perspective details
-- [ ] CHANGELOG updated
+- [x] Camera toggles between first and third person smoothly (V key)
+- [x] Player model hidden in first-person, shadow preserved
+- [x] Transition is smooth (no instant snapping)
+- [x] Zero-g thrust removed (player helpless in space)
+- [x] All existing gameplay still works
+- [x] Spec updated with camera perspective details
+- [x] CHANGELOG updated
 
 ---
 

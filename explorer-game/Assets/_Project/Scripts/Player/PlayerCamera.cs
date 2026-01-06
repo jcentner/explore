@@ -290,7 +290,6 @@ namespace Explorer.Player
 
         private void HandleToggleCameraView()
         {
-            Debug.Log("PlayerCamera: HandleToggleCameraView called");
             TogglePerspective();
         }
 

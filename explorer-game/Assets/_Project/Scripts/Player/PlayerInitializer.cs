@@ -32,14 +32,12 @@ namespace Explorer.Player
             if (_inputReader == null)
             {
                 _inputReader = Resources.Load<InputReader>("InputReader");
-                Debug.Log($"PlayerInitializer: Loaded InputReader from Resources: {_inputReader != null}");
             }
 
             // Wire up motor
             if (_motor != null && _inputReader != null)
             {
                 _motor.SetInputReader(_inputReader);
-                Debug.Log("PlayerInitializer: Wired up motor");
             }
 
             // Auto-find renderers if needed
