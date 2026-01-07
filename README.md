@@ -1,4 +1,8 @@
-# Explore
+# Exploring Copilot dev with an exploration game
+
+Experimenting with game dev in Unity3D with heavy use of GitHub Copilot. I want to see where the limits are with Claude Opus 4.5, Unity MCP, and development of a significantly sophisticated project. 
+
+## Game Concept
 
 A 3D exploration game set in a compact, handcrafted star system. Players walk on round planets with dynamic gravity, fly ships between celestial bodies, and use stargates to travel between locations.
 
