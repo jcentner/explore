@@ -204,6 +204,16 @@ namespace Explorer.Player
             _interactAction = playerMap.FindAction("Interact");
             _toggleCameraViewAction = playerMap.FindAction("ToggleCameraView");
             _pauseAction = playerMap.FindAction("Pause");
+            
+            // Debug: log if pause action was found
+            if (_pauseAction == null)
+            {
+                Debug.LogWarning("InputReader: Pause action not found in Player action map!");
+            }
+            else
+            {
+                Debug.Log("InputReader: Pause action found and will be subscribed.");
+            }
 
             if (_moveAction != null)
             {
