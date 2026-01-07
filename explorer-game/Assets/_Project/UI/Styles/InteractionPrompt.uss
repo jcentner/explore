@@ -1,0 +1,90 @@
+/* =============================================================================
+   InteractionPrompt.uss - Styles for interaction prompt panel
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Main Container
+   ----------------------------------------------------------------------------- */
+
+.interaction-prompt {
+    position: absolute;
+    bottom: 100px;
+    left: 0;
+    right: 0;
+    
+    align-items: center;
+    justify-content: center;
+    
+    /* Transitions */
+    transition-property: opacity, translate;
+    transition-duration: var(--transition-normal);
+    transition-timing-function: ease-out;
+}
+
+.interaction-prompt--hidden {
+    opacity: 0;
+    translate: 0 20px;
+}
+
+.interaction-prompt--visible {
+    opacity: 1;
+    translate: 0 0;
+}
+
+/* -----------------------------------------------------------------------------
+   Inner Container
+   ----------------------------------------------------------------------------- */
+
+.interaction-prompt__container {
+    flex-direction: row;
+    align-items: center;
+    
+    padding: var(--spacing-sm) var(--spacing-md);
+    
+    background-color: var(--color-background);
+    border-radius: var(--radius-md);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* -----------------------------------------------------------------------------
+   Key Box
+   ----------------------------------------------------------------------------- */
+
+.interaction-prompt__key-box {
+    min-width: 40px;
+    min-height: 40px;
+    
+    align-items: center;
+    justify-content: center;
+    
+    margin-right: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    
+    background-color: var(--color-primary);
+    border-radius: var(--radius-sm);
+    
+    /* Subtle inner shadow effect */
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.2);
+    border-bottom-color: rgba(0, 0, 0, 0.3);
+}
+
+.interaction-prompt__key {
+    font-size: var(--font-size-lg);
+    -unity-font-style: bold;
+    color: var(--color-text);
+    
+    -unity-text-align: middle-center;
+}
+
+/* -----------------------------------------------------------------------------
+   Action Text
+   ----------------------------------------------------------------------------- */
+
+.interaction-prompt__action {
+    font-size: var(--font-size-body);
+    color: var(--color-text);
+    
+    -unity-text-align: middle-left;
+}

@@ -141,7 +141,7 @@ namespace Explorer.Ship
             if (_boardingPromptUI != null)
                 _boardingPromptUI.SetActive(true);
             else
-                InteractionPromptService.Show("Press [F] to board ship");
+                UIService<IInteractionPrompt>.Instance?.Show("Press [F] to board ship");
             
             OnPlayerInRange?.Invoke();
         }
@@ -156,7 +156,7 @@ namespace Explorer.Ship
             if (_boardingPromptUI != null)
                 _boardingPromptUI.SetActive(false);
             else
-                InteractionPromptService.Hide();
+                UIService<IInteractionPrompt>.Instance?.Hide();
             
             OnPlayerOutOfRange?.Invoke();
         }
@@ -184,7 +184,7 @@ namespace Explorer.Ship
             if (_boardingPromptUI != null)
                 _boardingPromptUI.SetActive(false);
             else
-                InteractionPromptService.Hide();
+                UIService<IInteractionPrompt>.Instance?.Hide();
             
             // Use state controller for proper transition
             _playerStateController.BoardShip(transform, _shipCamera, _shipInput);

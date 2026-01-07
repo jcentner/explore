@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <!-- Interaction Prompt Panel - displays "Press [F] to Board Ship" style prompts -->
+    <ui:VisualElement class="interaction-prompt interaction-prompt--hidden">
+        <ui:VisualElement class="interaction-prompt__container">
+            <ui:VisualElement class="interaction-prompt__key-box">
+                <ui:Label name="KeyLabel" text="F" class="interaction-prompt__key" />
+            </ui:VisualElement>
+            <ui:Label name="ActionLabel" text="Board Ship" class="interaction-prompt__action" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

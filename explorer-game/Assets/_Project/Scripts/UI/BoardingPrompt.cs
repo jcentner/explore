@@ -51,7 +51,7 @@ namespace Explorer.UI
             CreateUI();
             
             // Register with service locator for decoupled access
-            InteractionPromptService.Register(this);
+            UIService<IInteractionPrompt>.Register(this);
         }
         
         private void Update()
@@ -70,16 +70,16 @@ namespace Explorer.UI
         private void OnDestroy()
         {
             // Unregister from service locator
-            InteractionPromptService.Unregister(this);
+            UIService<IInteractionPrompt>.Unregister(this);
             
             if (Instance == this)
                 Instance = null;
         }
         
-        // === Public Methods ===
+        // === Public Methods (IInteractionPrompt) ===
         
-        /// <summary>Show the boarding prompt.</summary>
-        public void Show(string text = null)
+        /// <summary>Show the boarding prompt with simple text.</summary>
+        public void Show(string text)
         {
             if (text != null)
                 _text.text = text;
@@ -87,6 +87,23 @@ namespace Explorer.UI
                 _text.text = _promptText;
             
             _targetAlpha = 1f;
+        }
+        
+        /// <summary>Show the boarding prompt with key and context.</summary>
+        public void Show(string actionKey, string context)
+        {
+            _text.text = $"[{actionKey}] {context}";
+            _targetAlpha = 1f;
+        }
+        
+        /// <summary>Show the boarding prompt with structured data.</summary>
+        public void Show(InteractionPromptData data)
+        {
+            string action = data.ActionVerb ?? "Interact";
+            if (!string.IsNullOrEmpty(data.TargetName))
+                action = $"{action} {data.TargetName}";
+            
+            Show(data.ActionKey ?? "F", action);
         }
         
         /// <summary>Hide the boarding prompt.</summary>

@@ -1,0 +1,19 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/_Project/UI/Styles/Core.uss" />
+    <Style src="project://database/Assets/_Project/UI/Styles/InteractionPrompt.uss" />
+    <Style src="project://database/Assets/_Project/UI/Styles/PauseScreen.uss" />
+    
+    <!-- Panels Container - HUD elements that don't block gameplay -->
+    <ui:VisualElement name="Panels" class="panels-container">
+        <!-- Interaction Prompt -->
+        <ui:Template name="InteractionPrompt" src="project://database/Assets/_Project/UI/Templates/InteractionPrompt.uxml" />
+        <ui:Instance template="InteractionPrompt" name="InteractionPromptInstance" />
+    </ui:VisualElement>
+    
+    <!-- Screens Container - Full-screen UI that blocks gameplay -->
+    <ui:VisualElement name="Screens" class="screens-container">
+        <!-- Pause Screen -->
+        <ui:Template name="PauseScreen" src="project://database/Assets/_Project/UI/Templates/PauseScreen.uxml" />
+        <ui:Instance template="PauseScreen" name="PauseScreenInstance" />
+    </ui:VisualElement>
+</ui:UXML>

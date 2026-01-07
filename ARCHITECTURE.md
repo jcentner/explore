@@ -158,7 +158,7 @@ Using Unity's **new Input System** (package already installed).
 |-----------|---------|--------|
 | `FloatingOriginManager` | Precision at large distances | If needed |
 | `GateController` | Gate transition orchestration | Milestone 7 |
-| `InteractionSystem` | Raycast + prompt system | Milestone 6 |
+| `UIManager` | UI screen/panel lifecycle | Milestone 6 |
 | `SaveSystem` | Progression state persistence | Milestone 8 |
 
 ### 5.3 Core Utilities (Explorer.Core)
@@ -170,11 +170,11 @@ Using Unity's **new Input System** (package already installed).
 * `Layers` – Layer indices and pre-computed masks (`Layers.GROUND_MASK`)
 
 **Service Locators:**
-* `InteractionPromptService` – UI prompts (gameplay calls `Show()`/`Hide()` without UI dependency)
+* `UIService<T>` – Generic UI service locator (e.g., `UIService<IInteractionPrompt>.Instance`)
 * `PlayerPilotingService` – Player piloting state queries (decouples from Player assembly)
 
 **Interfaces:**
-* `IInteractionPrompt` – Implemented by `BoardingPrompt` in UI
+* `IInteractionPrompt` – Implemented by `InteractionPromptPanel` in UI
 * `IPlayerPilotingState` – Implemented by `PlayerStateController` in Player
 * `IGravitySource` – Implemented by `GravityBody` in Gravity
 * `IGravityAffected` – Implemented by `GravitySolver` in Gravity
@@ -198,6 +198,13 @@ g = surfaceGravity × (surfaceRadius² / distance²)
 * `PostProcessProfile` (global volume asset)
 * `GateVFX` (VFX Graph or Particle System + Shader Graph) — deferred
 * `PlanetAtmosphere` (Shader Graph material + parameters) — deferred
+
+### 5.6 UI System (UI Toolkit)
+
+* **UIDocument** – Root document hosting all UI
+* **UXML Templates** – Declarative layout files (like HTML)
+* **USS Stylesheets** – CSS-like styling with variables
+* **UIManager** – Screen stack + panel registry + pause handling
 * `LODProfiles` (per major asset type) — deferred
 
 ---

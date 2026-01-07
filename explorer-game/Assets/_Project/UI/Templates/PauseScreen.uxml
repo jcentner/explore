@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <!-- Pause Screen - Full-screen menu with overlay -->
+    <ui:VisualElement class="screen pause-screen screen--hidden">
+        <!-- Dark overlay background -->
+        <ui:VisualElement class="pause-screen__overlay" />
+        
+        <!-- Content panel -->
+        <ui:VisualElement class="pause-screen__content">
+            <ui:Label text="PAUSED" class="pause-screen__title" />
+            
+            <ui:VisualElement class="pause-screen__buttons">
+                <ui:Button name="ResumeButton" text="Resume" class="btn btn--primary btn--large" />
+                <ui:Button name="SettingsButton" text="Settings" class="btn btn--large" />
+                <ui:Button name="QuitButton" text="Quit to Desktop" class="btn btn--danger btn--large" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

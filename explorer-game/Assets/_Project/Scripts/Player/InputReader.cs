@@ -26,6 +26,7 @@ namespace Explorer.Player
         private InputAction _sprintAction;
         private InputAction _interactAction;
         private InputAction _toggleCameraViewAction;
+        private InputAction _pauseAction;
 
         // === Cached Ship Actions ===
         private InputAction _shipThrustAction;
@@ -35,6 +36,7 @@ namespace Explorer.Player
         private InputAction _shipBrakeAction;
         private InputAction _shipBoostAction;
         private InputAction _shipExitAction;
+        private InputAction _shipPauseAction;
 
         // === Player Properties ===
         
@@ -136,6 +138,7 @@ namespace Explorer.Player
             _sprintAction = null;
             _interactAction = null;
             _toggleCameraViewAction = null;
+            _pauseAction = null;
             _shipThrustAction = null;
             _shipVerticalAction = null;
             _shipLookAction = null;
@@ -143,6 +146,7 @@ namespace Explorer.Player
             _shipBrakeAction = null;
             _shipBoostAction = null;
             _shipExitAction = null;
+            _shipPauseAction = null;
             
             // Reset input values
             MoveInput = Vector2.zero;
@@ -199,6 +203,7 @@ namespace Explorer.Player
             _sprintAction = playerMap.FindAction("Sprint");
             _interactAction = playerMap.FindAction("Interact");
             _toggleCameraViewAction = playerMap.FindAction("ToggleCameraView");
+            _pauseAction = playerMap.FindAction("Pause");
 
             if (_moveAction != null)
             {
@@ -231,6 +236,11 @@ namespace Explorer.Player
             if (_toggleCameraViewAction != null)
             {
                 _toggleCameraViewAction.performed += OnToggleCameraViewPerformed;
+            }
+
+            if (_pauseAction != null)
+            {
+                _pauseAction.performed += OnPausePerformed;
             }
 
             playerMap.Enable();
@@ -278,6 +288,11 @@ namespace Explorer.Player
             if (_toggleCameraViewAction != null)
             {
                 _toggleCameraViewAction.performed -= OnToggleCameraViewPerformed;
+            }
+
+            if (_pauseAction != null)
+            {
+                _pauseAction.performed -= OnPausePerformed;
             }
 
             var playerMap = _inputActions?.FindActionMap(_playerMapName);
@@ -330,6 +345,7 @@ namespace Explorer.Player
             _shipBrakeAction = shipMap.FindAction("Brake");
             _shipBoostAction = shipMap.FindAction("Boost");
             _shipExitAction = shipMap.FindAction("Exit");
+            _shipPauseAction = shipMap.FindAction("Pause");
 
             if (_shipThrustAction != null)
             {
@@ -370,6 +386,11 @@ namespace Explorer.Player
             if (_shipExitAction != null)
             {
                 _shipExitAction.performed += OnShipExitPerformed;
+            }
+
+            if (_shipPauseAction != null)
+            {
+                _shipPauseAction.performed += OnPausePerformed;
             }
 
             shipMap.Enable();
@@ -425,6 +446,11 @@ namespace Explorer.Player
             if (_shipExitAction != null)
             {
                 _shipExitAction.performed -= OnShipExitPerformed;
+            }
+
+            if (_shipPauseAction != null)
+            {
+                _shipPauseAction.performed -= OnPausePerformed;
             }
 
             var shipMap = _inputActions?.FindActionMap(_shipMapName);
@@ -483,6 +509,11 @@ namespace Explorer.Player
         private void OnToggleCameraViewPerformed(InputAction.CallbackContext context)
         {
             OnToggleCameraView?.Invoke();
+        }
+
+        private void OnPausePerformed(InputAction.CallbackContext context)
+        {
+            OnPause?.Invoke();
         }
 
         // === Ship Input Callbacks ===

@@ -87,17 +87,35 @@ namespace Explorer.Player
             if (_inputReader == null)
                 _inputReader = Resources.Load<InputReader>("InputReader");
             
+            // Subscribe to pause input
+            if (_inputReader != null)
+            {
+                _inputReader.OnPause += HandlePauseInput;
+            }
+            
             // Create fade overlay for transitions
             CreateFadeOverlay();
         }
         
         private void OnDestroy()
         {
+            // Unsubscribe from pause input
+            if (_inputReader != null)
+            {
+                _inputReader.OnPause -= HandlePauseInput;
+            }
+            
             if (Instance == this)
             {
                 Instance = null;
                 PlayerPilotingService.Unregister(this);
             }
+        }
+        
+        private void HandlePauseInput()
+        {
+            // Forward to UI system via service locator (decoupled)
+            UIService<IPauseHandler>.Instance?.HandlePause();
         }
         
         // === Public Methods ===

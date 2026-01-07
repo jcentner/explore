@@ -6,6 +6,49 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Milestone 6: UI Foundation (In Progress)
+
+**Phase 3: Pause Menu ✅**
+- Added `Pause` action to Player and Ship input maps (Escape key, Gamepad Start)
+- Wired `InputReader.OnPause` event via new `_pauseAction` and `_shipPauseAction` fields
+- Created `IPauseHandler` interface in Core for decoupled pause handling
+- `PlayerStateController` subscribes to `OnPause` and invokes `UIService<IPauseHandler>.Instance?.HandlePause()`
+- `UIManager` implements `IPauseHandler` and registers with `UIService`
+- Created `PauseScreen.cs` with time scale control, cursor unlock, button callbacks
+- Created `PauseScreen.uxml` template with overlay, title, Resume/Settings/Quit buttons
+- Created `PauseScreen.uss` stylesheet with `.btn--large` and `.btn--danger` styles
+- UIManager auto-initializes `PauseScreen` from template instance
+- **Manual step required:** Assign `MainUI.uxml` to UIDocument in Inspector to test
+
+**Phase 2: Interaction Prompts ✅**
+- Extended `IInteractionPrompt` interface with `Show(key, context)` and `Show(InteractionPromptData)` overloads
+- Added `InteractionPromptData` struct for structured prompt data
+- Created `InteractionPromptPanel.cs` implementing `IInteractionPrompt` for UI Toolkit
+- Created `InteractionPrompt.uxml` template with key indicator and action text
+- Created `InteractionPrompt.uss` stylesheet with fade transitions
+- Updated `MainUI.uxml` to include InteractionPrompt template instance
+- Updated `UIManager` to auto-initialize `InteractionPromptPanel` from template
+- Deleted old UGUI-based `BoardingPrompt.cs` and removed from scene
+
+**Phase 1: Foundation ✅**
+- Created `UIService<T>` generic service locator in `Game.Core`
+- Migrated `ShipBoardingTrigger` and `BoardingPrompt` to use `UIService<IInteractionPrompt>`
+- Removed old `InteractionPromptService` from `IInteractionPrompt.cs`
+- Created `UIManager` singleton with screen stack, panel registry, pause management
+- Created `UIScreen` and `UIPanel` abstract base classes for UI Toolkit
+- Created `Core.uss` stylesheet with CSS variables, typography, button styles
+- Created `MainUI.uxml` root document with Panels/Screens containers
+- Added UI GameObject to scene with UIDocument + UIManager components
+
+**Phase 0: Cleanup & Preparation ✅**
+- Deleted orphaned `InteractionPromptUI.cs` (didn't implement `IInteractionPrompt`)
+- Moved `GravityDebugPanel` from `Game.Gravity` to `Game.UI` assembly (fixed architecture violation)
+- Created folder structure for UI Toolkit: `Scripts/UI/Panels/`, `Screens/`, `Base/`
+- Created UI asset folders: `Assets/_Project/UI/Templates/`, `Styles/`
+- Updated documentation: `ui-system.spec.md`, `ARCHITECTURE.md` for UI Toolkit architecture
+
+---
+
 ### Milestone 5: Solar System Lighting ✅
 
 - Custom unlit shaders for correct sun-facing illumination at any viewpoint
@@ -41,6 +84,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Created UI framework plan and specification
 - Renumbered milestones (UI before Gate Transition)
+- Updated plan for UI Toolkit architecture (UXML + USS instead of UGUI)
 
 ---
 

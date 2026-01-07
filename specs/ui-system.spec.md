@@ -8,13 +8,23 @@
 
 ## 1. Overview
 
-The UI system provides a consistent, scalable framework for all user interface elements in the game. It separates concerns between gameplay code and UI presentation through interfaces defined in `Game.Core`.
+The UI system provides a consistent, scalable framework for all user interface elements using **Unity UI Toolkit**. It separates concerns between gameplay code and UI presentation through interfaces defined in `Game.Core`.
 
 ### Design Goals
 - **Decoupled:** Gameplay assemblies never reference UI directly
-- **Consistent:** All UI uses shared base classes and styling
+- **Consistent:** All UI uses shared USS stylesheets and UXML templates
 - **Extensible:** Easy to add new screens and panels
-- **Performant:** Proper Canvas usage, no per-frame allocations
+- **Performant:** UI Toolkit retained mode, no per-frame allocations
+
+### Technology Choice: UI Toolkit
+
+| Aspect | UGUI (Canvas) | UI Toolkit |
+|--------|---------------|------------|
+| Layout | Anchor-based, manual | Flexbox-inspired, responsive |
+| Styling | Per-element configuration | USS stylesheets (CSS-like), reusable |
+| Performance | Canvas rebuild on changes | Retained mode, efficient updates |
+| Workflow | Prefabs, scene hierarchy | UXML templates, visual preview |
+| Future | Legacy (maintenance mode) | Unity's recommended path |
 
 ---
 
@@ -23,7 +33,7 @@ The UI system provides a consistent, scalable framework for all user interface e
 ### Component Hierarchy
 
 ```
-UIManager (singleton)
+UIManager (MonoBehaviour + UIDocument)
 ├── Screen Stack (LIFO)
 │   └── UIScreen instances (PauseScreen, SettingsScreen, etc.)
 └── Panel Registry
@@ -33,32 +43,35 @@ UIManager (singleton)
 ### Assembly Dependencies
 
 ```
-Game.Core (interfaces: IInteractionPrompt, IUIService)
+Game.Core (interfaces: IInteractionPrompt + UIService<T>)
     ↑
 Game.UI (implementations: UIManager, screens, panels)
     
 Game.Ship / Game.Player
     ↓
-Uses: UIService.Get<IInteractionPrompt>() from Game.Core
+Uses: UIService<IInteractionPrompt>.Instance from Game.Core
 ```
 
 ---
 
 ## 3. Core Components
 
-### UIService (Game.Core)
+### UIService<T> (Game.Core)
 
-Static service locator replacing `InteractionPromptService`.
+Generic static service locator replacing `InteractionPromptService`.
 
 ```csharp
 namespace Explorer.Core
 {
-    public static class UIService
+    public static class UIService<T> where T : class
     {
-        public static void Register<T>(T instance) where T : class;
-        public static void Unregister<T>() where T : class;
-        public static T Get<T>() where T : class;
-        public static bool TryGet<T>(out T service) where T : class;
+        private static T _instance;
+        
+        public static T Instance => _instance;
+        
+        public static void Register(T instance);
+        public static void Unregister(T instance);
+        public static bool IsRegistered => _instance != null;
     }
 }
 ```
@@ -66,16 +79,15 @@ namespace Explorer.Core
 **Usage:**
 ```csharp
 // In UI assembly (registers)
-UIService.Register<IInteractionPrompt>(this);
+UIService<IInteractionPrompt>.Register(this);
 
 // In Ship assembly (consumes)
-if (UIService.TryGet<IInteractionPrompt>(out var prompt))
-    prompt.Show("Press F to board");
+UIService<IInteractionPrompt>.Instance?.Show("Press F to board");
 ```
 
 ### UIManager
 
-Central controller for all UI. Scene-based singleton (not auto-created).
+Central controller for all UI. Scene-based singleton with `UIDocument`.
 
 **Responsibilities:**
 - Manages screen stack (push/pop)
@@ -111,16 +123,16 @@ public class UIManager : MonoBehaviour
 Abstract base for full-screen UI elements (menus, settings, etc.).
 
 ```csharp
-public abstract class UIScreen : MonoBehaviour
+public abstract class UIScreen
 {
-    protected CanvasGroup CanvasGroup { get; }
+    public VisualElement Root { get; }
     
-    public virtual void Open();
-    public virtual void Close();
+    public virtual void Show();
+    public virtual void Hide();
     
-    protected virtual void OnOpened() { }
-    protected virtual void OnClosed() { }
-    protected virtual void OnBackPressed() => UIManager.Instance.PopScreen();
+    protected virtual void OnShown() { }
+    protected virtual void OnHidden() { }
+    protected virtual void HandleBack() => UIManager.Instance.PopScreen();
 }
 ```
 
@@ -135,13 +147,13 @@ public abstract class UIScreen : MonoBehaviour
 Abstract base for HUD elements (always-visible or contextual).
 
 ```csharp
-public abstract class UIPanel : MonoBehaviour
+public abstract class UIPanel
 {
-    protected CanvasGroup CanvasGroup { get; }
+    public VisualElement Root { get; }
+    public bool IsVisible { get; }
     
     public virtual void Show();
     public virtual void Hide();
-    public bool IsVisible { get; }
     
     protected virtual void OnShown() { }
     protected virtual void OnHidden() { }
@@ -162,8 +174,8 @@ public abstract class UIPanel : MonoBehaviour
 
 | Map | Active When | Actions |
 |-----|-------------|---------|
-| Player | On foot, not paused | Move, Jump, Interact, Pause |
-| Ship | Piloting, not paused | Throttle, Pitch/Yaw/Roll, Exit, Pause |
+| Player | On foot, not paused | Move, Jump, Interact, **Pause** |
+| Ship | Piloting, not paused | Throttle, Pitch/Yaw/Roll, Exit, **Pause** |
 | UI | Any menu open | Navigate, Submit, Cancel |
 
 ### Pause Flow
@@ -174,7 +186,7 @@ InputReader.OnPause fired
 UIManager receives event
     ↓
 If no screen open → PushScreen<PauseScreen>()
-If screen open → PopScreen() (or delegate to screen's OnBackPressed)
+If screen open → PopScreen() (or delegate to screen's HandleBack)
     ↓
 UIManager sets Time.timeScale (0 or 1)
 UIManager toggles Player/Ship input maps
@@ -198,50 +210,73 @@ UIManager toggles Player/Ship input maps
 | InteractionPromptPanel | "Press F to board" style prompts | When near interactable |
 | VelocityPanel | Speed and altitude display | When piloting ship |
 | ShipStatusPanel | Throttle, fuel (future) | When piloting ship |
+| GravityIndicatorPanel | Gravity direction arrow | Always (switches player↔ship) |
+| GravityDebugPanel | F3 debug overlay | Toggle with F3 key |
 
 ---
 
 ## 6. Visual Standards
 
-### Typography
-- **Font:** TextMeshPro default or custom space-themed font
-- **Sizes:** Title (48), Header (32), Body (24), Small (18)
+### Typography (UI Toolkit)
+- **Font:** Unity default or custom space-themed font asset
+- **Sizes:** Title (48px), Header (32px), Body (24px), Small (18px)
 - **Colors:** White text, 80% opacity for secondary
 
-### Colors
-- **Primary:** #4A90D9 (blue accent)
-- **Background:** #1A1A2E (dark navy) at 90% opacity
-- **Text:** #FFFFFF
-- **Highlight:** #7EC8E3
+### USS Variables (Core.uss)
+```css
+:root {
+    --color-primary: #4A90D9;
+    --color-background: rgba(26, 26, 46, 0.9);
+    --color-text: #FFFFFF;
+    --color-text-secondary: rgba(255, 255, 255, 0.8);
+    --color-highlight: #7EC8E3;
+    
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    
+    --font-size-small: 18px;
+    --font-size-body: 24px;
+    --font-size-header: 32px;
+    --font-size-title: 48px;
+    
+    --transition-fast: 0.15s;
+    --transition-normal: 0.25s;
+}
+```
 
 ### Layout
 - **Safe area:** Respect screen edges (especially for consoles)
-- **Spacing:** 16px standard padding
+- **Spacing:** 16px standard padding (use `--spacing-md`)
 - **Alignment:** Left-align body text, center titles
 
 ---
 
 ## 7. Scene Setup
 
-### Canvas Hierarchy
+### UI Toolkit Hierarchy
 
 ```
-Canvas (Screen Space - Overlay)
-├── UIManager
+UI (GameObject)
+├── UIDocument (component)
+│   └── PanelSettings: UIPanelSettings.asset
+│   └── Source Asset: MainUI.uxml
+└── UIManager (component)
+
+MainUI.uxml (root)
 ├── Panels/
 │   ├── InteractionPromptPanel
 │   ├── VelocityPanel
 │   └── ShipStatusPanel
 └── Screens/
-    ├── PauseScreen (inactive by default)
-    └── SettingsScreen (inactive by default)
-
-EventSystem
+    ├── PauseScreen (hidden by default)
+    └── SettingsScreen (hidden by default)
 ```
 
-### Canvas Settings
-- Render Mode: Screen Space - Overlay
-- UI Scale Mode: Scale With Screen Size
+### Panel Settings
+- Scale Mode: Scale With Screen Size
 - Reference Resolution: 1920x1080
 - Match: 0.5 (width/height balance)
 
@@ -249,11 +284,11 @@ EventSystem
 
 ## 8. Performance Guidelines
 
-1. **Use CanvasGroup** for show/hide (alpha + blocksRaycasts) instead of SetActive
-2. **Avoid Layout Groups** in frequently-updated panels
-3. **Cache component references** in Awake, not every frame
-4. **Disable raycast targets** on non-interactive elements
-5. **Use object pooling** for dynamically-created UI elements
+1. **Use USS transitions** for animations instead of script-based lerp
+2. **Avoid per-frame queries** — cache VisualElement references
+3. **Use USS classes** for state changes instead of inline styles
+4. **Batch updates** — modify multiple properties then call MarkDirtyRepaint once
+5. **Use display:none** instead of opacity:0 when element is fully hidden
 
 ---
 
@@ -282,13 +317,48 @@ EventSystem
 
 ---
 
-## 10. Future Extensions
+## 10. File Structure
+
+```
+Assets/_Project/
+├── Scripts/UI/
+│   ├── Game.UI.asmdef
+│   ├── UIManager.cs
+│   ├── Base/
+│   │   ├── UIScreen.cs
+│   │   └── UIPanel.cs
+│   ├── Panels/
+│   │   ├── InteractionPromptPanel.cs
+│   │   ├── VelocityPanel.cs
+│   │   ├── ShipStatusPanel.cs
+│   │   ├── GravityIndicatorPanel.cs
+│   │   └── GravityDebugPanel.cs
+│   └── Screens/
+│       ├── PauseScreen.cs
+│       └── SettingsScreen.cs
+└── UI/
+    ├── MainUI.uxml
+    ├── Templates/
+    │   ├── InteractionPrompt.uxml
+    │   ├── PauseScreen.uxml
+    │   └── SettingsScreen.uxml
+    └── Styles/
+        ├── Core.uss
+        ├── InteractionPrompt.uss
+        ├── PauseScreen.uss
+        └── HUD.uss
+```
+
+---
+
+## 11. Future Extensions
 
 | Feature | Milestone | Notes |
 |---------|-----------|-------|
+| Loading Screen | Milestone 7 | Gate transition overlay |
 | Inventory UI | TBD | Item grid, equipment slots |
 | Map/Navigation | TBD | Solar system view, waypoints |
 | Dialogue System | TBD | NPC conversations, choices |
 | Quest Tracker | TBD | Objectives, progress |
 | Control Rebinding | TBD | Read from Input System |
-| Localization | TBD | TextMeshPro localization |
+| Localization | TBD | UI Toolkit localization support |

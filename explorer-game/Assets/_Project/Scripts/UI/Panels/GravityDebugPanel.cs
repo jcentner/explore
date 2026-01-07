@@ -2,8 +2,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;
 using Explorer.Core;
+using Explorer.Gravity;
 
-namespace Explorer.Gravity
+namespace Explorer.UI
 {
     /// <summary>
     /// Runtime debug panel showing gravity information and tuning controls.
