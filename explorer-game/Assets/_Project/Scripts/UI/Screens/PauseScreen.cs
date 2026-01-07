@@ -30,14 +30,19 @@ namespace Explorer.UI
         /// </summary>
         public PauseScreen(VisualElement templateContainer) : base()
         {
-            // Find the root pause-screen element
-            Root = templateContainer.Q<VisualElement>(className: "pause-screen");
-            if (Root == null)
-            {
-                Root = templateContainer;
-            }
+            // Use the template container as Root - it wraps the actual content
+            // The inner .pause-screen element provides styling, but we control
+            // visibility on the container level
+            Root = templateContainer;
             
-            // Query buttons
+            // Make the template container fill the screen
+            Root.style.position = Position.Absolute;
+            Root.style.left = 0;
+            Root.style.top = 0;
+            Root.style.right = 0;
+            Root.style.bottom = 0;
+            
+            // Query buttons from within the container
             _resumeButton = Root.Q<Button>(RESUME_BUTTON);
             _settingsButton = Root.Q<Button>(SETTINGS_BUTTON);
             _quitButton = Root.Q<Button>(QUIT_BUTTON);
@@ -63,12 +68,9 @@ namespace Explorer.UI
             }
             
             // Start hidden
-            if (Root != null)
-            {
-                Root.style.display = DisplayStyle.None;
-                Root.AddToClassList("screen");
-                Root.AddToClassList("screen--hidden");
-            }
+            Root.style.display = DisplayStyle.None;
+            Root.AddToClassList("screen");
+            Root.AddToClassList("screen--hidden");
         }
         
         // === Public Methods ===

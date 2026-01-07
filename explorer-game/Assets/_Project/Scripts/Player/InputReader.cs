@@ -204,16 +204,6 @@ namespace Explorer.Player
             _interactAction = playerMap.FindAction("Interact");
             _toggleCameraViewAction = playerMap.FindAction("ToggleCameraView");
             _pauseAction = playerMap.FindAction("Pause");
-            
-            // Debug: log if pause action was found
-            if (_pauseAction == null)
-            {
-                Debug.LogWarning("InputReader: Pause action not found in Player action map!");
-            }
-            else
-            {
-                Debug.Log("InputReader: Pause action found and will be subscribed.");
-            }
 
             if (_moveAction != null)
             {
@@ -611,10 +601,6 @@ namespace Explorer.Player
                 if (textAsset != null)
                 {
                     _inputActions = InputActionAsset.FromJson(textAsset.text);
-                    if (_inputActions != null)
-                    {
-                        Debug.Log($"InputReader: Loaded InputActionAsset from JSON TextAsset: {_inputActions.name}");
-                    }
                 }
             }
             
@@ -625,7 +611,6 @@ namespace Explorer.Player
                 if (assets != null && assets.Length > 0)
                 {
                     _inputActions = assets[0];
-                    Debug.Log($"InputReader: Found InputActionAsset via LoadAll: {_inputActions.name}");
                 }
             }
         }

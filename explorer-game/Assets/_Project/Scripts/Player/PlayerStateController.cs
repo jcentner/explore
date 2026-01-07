@@ -91,11 +91,6 @@ namespace Explorer.Player
             if (_inputReader != null)
             {
                 _inputReader.OnPause += HandlePauseInput;
-                Debug.Log("[PlayerStateController] Subscribed to OnPause event.");
-            }
-            else
-            {
-                Debug.LogWarning("[PlayerStateController] InputReader is null, cannot subscribe to OnPause!");
             }
             
             // Create fade overlay for transitions
@@ -119,17 +114,11 @@ namespace Explorer.Player
         
         private void HandlePauseInput()
         {
-            Debug.Log("[PlayerStateController] HandlePauseInput called!");
             // Forward to UI system via service locator (decoupled)
             var handler = UIService<IPauseHandler>.Instance;
             if (handler != null)
             {
-                Debug.Log("[PlayerStateController] Calling IPauseHandler.HandlePause()");
                 handler.HandlePause();
-            }
-            else
-            {
-                Debug.LogWarning("[PlayerStateController] No IPauseHandler registered!");
             }
         }
         
