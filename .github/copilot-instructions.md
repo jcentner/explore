@@ -27,10 +27,27 @@ Always reference these when working on this project:
 - **Questioning scope or priorities?** → Read `design_doc.md`
 - **Working on a milestone?** → Read `plans/milestone-X.plan.md`
 - **Writing C# code?** → The `csharp.instructions.md` is auto-applied to `*.cs` files
+- **Modifying input actions?** → See "Input System" section below
 
 ## Milestone Planning
 
 Before starting any milestone, reference or create `plans/milestone-X.plan.md`. See `.github/instructions/planning.instructions.md` for the full template.
+
+## Input System (CRITICAL)
+
+**⚠️ TWO FILES MUST BE KEPT IN SYNC:**
+
+| File | Purpose |
+|------|---------|
+| `Assets/Settings/InputSystem_Actions.inputactions` | Unity Editor asset |
+| `Assets/_Project/Resources/InputSystem_Actions.json` | Runtime copy (loaded by InputReader) |
+
+**When adding/modifying input actions:**
+1. Edit the `.inputactions` file in Unity Editor
+2. **Manually copy** the same changes to the `.json` file in Resources
+3. Both files have identical JSON structure
+
+**Why?** `InputReader.cs` loads from `Resources.Load<TextAsset>()` at runtime, not from the Unity asset directly. Forgetting to sync causes inputs to silently fail.
 
 ## Unity MCP Tools
 

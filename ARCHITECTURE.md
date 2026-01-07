@@ -119,19 +119,41 @@ Game.UI.asmdef            → UI/ (depends on Core, Gravity) — decoupled from 
 
 Using Unity's **new Input System** (package already installed).
 
+### ⚠️ CRITICAL: Dual-File Architecture
+
+The input system uses **two files that must be kept in sync**:
+
+| File | Purpose | When to Edit |
+|------|---------|--------------|
+| `Assets/Settings/InputSystem_Actions.inputactions` | Unity Editor asset (visual editor) | Use Unity's Input Actions editor UI |
+| `Assets/_Project/Resources/InputSystem_Actions.json` | Runtime copy loaded by `InputReader` | **Must be manually synced** |
+
+**Why two files?**
+- The `.inputactions` file is a Unity asset with GUID references
+- `InputReader` loads from Resources at runtime via `Resources.Load<TextAsset>()`
+- This allows the InputReader ScriptableObject to work without direct asset references
+
+**⚠️ Adding/Modifying Input Actions:**
+1. Edit `Assets/Settings/InputSystem_Actions.inputactions` in Unity Editor
+2. **Copy the exact same changes** to `Assets/_Project/Resources/InputSystem_Actions.json`
+3. Both files use identical JSON structure - only the file extension differs
+
+**Common Mistake:** Editing only the `.inputactions` file and wondering why inputs don't work at runtime.
+
 ### Action Maps
 
 | Action Map | Actions | Notes |
 |------------|---------|-------|
-| **Player** | Move, Look, Jump, Interact | On-foot controls |
-| **Ship** | Thrust, Vertical, Look, Roll, Brake, Boost, Exit | Flight controls |
-| **UI** | Navigate, Submit, Cancel, Pause | Menu navigation |
+| **Player** | Move, Look, Jump, Interact, Sprint, ToggleCameraView, Pause | On-foot controls |
+| **Ship** | Thrust, Vertical, Look, Roll, Brake, Boost, Exit, Pause | Flight controls |
+| **UI** | Navigate, Submit, Cancel | Menu navigation |
 
 ### Implementation Pattern
 
 * `InputReader.cs` ScriptableObject decouples input from consumers
-* Events-based: `OnJump`, `OnInteract`, `OnShipExit`
+* Events-based: `OnJump`, `OnInteract`, `OnPause`, `OnShipExit`
 * Switch Action Maps on mode change (on-foot ↔ ship ↔ UI)
+* Pause action exists in both Player and Ship maps (always available during gameplay)
 * Support rebinding via Input System's built-in rebind UI
 
 ### Control Scheme
