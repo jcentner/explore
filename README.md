@@ -37,12 +37,6 @@ explore/
     └── Assets/_Project/   # Game-specific assets
 ```
 
-## Current Milestone
-
-**Milestone 1: Core Gravity + On-foot Prototype** (Milestone 0 complete ✅)
-
-See [CHANGELOG.md](CHANGELOG.md) for detailed progress.
-
 ## Getting Started
 
 1. Open `explorer-game/` folder in Unity 6000.3.2f1
