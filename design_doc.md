@@ -6,11 +6,11 @@
 
 ## 1) Vision
 
-A 3D exploration game set in a compact, handcrafted star system. Players can:
+A 3D exploration game set in a galaxy of procedurally generated solar systems with explorable planets. 
 
 * Walk on round planets with **dynamic gravity** (local "down" toward planet center).
 * Fly a ship between bodies within the system.
-* Use a **stargate-like gate** to transition to other locations (scene-streamed).
+* Use a **stargate-like gate** to transition to planets in other solar systems (scene-streamed).
 
 Primary inspiration: *Outer Wilds* feel (learnable systemic physics + exploration), *Stargate* flavor (gate travel + mystery).
 
@@ -73,7 +73,7 @@ Primary inspiration: *Outer Wilds* feel (learnable systemic physics + exploratio
 
 ### Explicitly Not Included (for now)
 
-* Seamless travel between star systems (later via "hyperdrive" transition)
+* Seamless travel between star systems in a ship (later via "hyperdrive" transition)
 * True see-through portals
 * Real-time orbital simulation
 * Large procedural galaxy generation
@@ -231,3 +231,4 @@ Assets/
 * Minimal save state persists key flags
 * Stylized URP look established (post + emissives + atmosphere cues)
 * Build runs outside editor
+
